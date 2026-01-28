@@ -97,7 +97,7 @@ CREATE TABLE components (
 );
 
 -- Таблица 10: component_prices
--- DECIMAL(10,2) имеет NUMERIC affinity [web:12]
+-- D    ECIMAL(10,2) имеет NUMERIC affinity [web:12]
 -- DATE хранится в формате 'YYYY-MM-DD' [web:16][web:20]
 CREATE TABLE component_prices (
     price_id INTEGER PRIMARY KEY AUTOINCREMENT,
