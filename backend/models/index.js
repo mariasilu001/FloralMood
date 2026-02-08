@@ -349,6 +349,18 @@ Order.belongsTo(User, {
     as: "user",
 });
 
+// ========== ////////////////////////////////// ==========
+
+User.hasMany(Bouquet, {
+    foreignKey: "user_id",
+    as: "bouquets",
+});
+
+Bouquet.belongsTo(User, {
+    foreignKey: "user_id",
+    as: "user",
+});
+
 // ========== Связи Order ⇄ OrderItem ⇄ Bouquet ==========
 Order.hasMany(OrderItem, {
     foreignKey: "order_id",

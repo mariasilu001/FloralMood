@@ -30,11 +30,6 @@ SearchHistory.init(
             type: DataTypes.DATE,
             defaultValue: DataTypes.NOW,
         },
-        deletedAt: {
-            field: "deleted_at",
-            type: DataTypes.DATE,
-            defaultValue: null,
-        },
     },
     {
         sequelize,

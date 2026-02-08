@@ -81,6 +81,11 @@ Order.init(
                 key: "time_slot_id",
             },
         },
+        isPaid : {
+            field: "is_paid",
+            type: DataTypes.BOOLEAN,
+            defaultValue: false,
+        }
     },
     {
         sequelize,

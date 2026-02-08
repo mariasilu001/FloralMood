@@ -11,6 +11,15 @@ Bouquet.init(
             primaryKey: true,
             autoIncrement: true,
         },
+        userId: {
+            field: "user_id",
+            type: DataTypes.INTEGER,
+            allowNull: true,
+            references: {
+                model: "users",
+                key: "user_id",
+            },
+        },
         name: {
             field: "name",
             type: DataTypes.STRING(255),
