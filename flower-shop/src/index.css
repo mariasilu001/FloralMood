@@ -1,68 +1,229 @@
+/* ============================================
+   CSS-ПЕРЕМЕННЫЕ (ЦВЕТА)
+   ============================================ */
+
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+    /* Градиент фона страницы */
+    --bg-gradient-start: #ffe0f0; /* Розовый (начало градиента) */
+    --bg-gradient-end: #e8f5e9; /* Мятный (конец градиента) */
+    
+    /* Основные цвета */
+    --color-white: #ffffff; /* Белый */
+    --color-text-green: #2e7d32; /* Тёмно-зелёный (основной текст) */
+    
+    /* Розовые оттенки */
+    --color-pink: #f06292; /* Основной розовый (кнопка, ссылки, ошибки) */
+    --color-pink-bright: #f48fb1; /* Ярко-розовый (рамки) */
+    --color-pink-dark: #c2185b; /* Тёмно-розовый (тень кнопки) */
+    --color-pink-darker: #d81b60; /* Ещё темнее (текст ошибки) */
+    --color-pink-light: #f8bbd0; /* Светло-розовый (тени) */
+    --color-pink-lightest: #fce4ec; /* Очень светло-розовый (фон ошибки) */
+    --color-magenta: #ec407a; /* Малиновый (заголовки) */
+    
+    /* Зелёные оттенки */
+    --color-green-shadow: #a5d6a7; /* Зелёная тень (мультяшный эффект) */
+    --color-green-border: #c5e1a5; /* Салатовая рамка (инпуты) */
+    --color-green-bg: #f1f8e9; /* Очень светло-зелёный (фон инпутов) */
+    
+    /* Дополнительные цвета */
+    --color-gray: #cfd8dc; /* Серый (disabled состояние) */
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+/* ============================================
+   ГЛОБАЛЬНЫЕ НАСТРОЙКИ
+   ============================================ */
+
+/* Убираем все дефолтные отступы у всех элементов */
+* {
+    margin: 0; /* Убираем margin */
+    padding: 0; /* Убираем padding */
+    box-sizing: border-box; /* Ширина = content + padding + border */
 }
 
+/* html, body, #root занимают 100% высоты для вертикального центрирования */
+html,
+body,
+#root {
+    height: 100%; /* Обязательно 100% высоты viewport */
+}
+
+/* body: градиентный фон, центрирование через flexbox */
 body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+    background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%); /* Градиент используется через переменные: от розового к мятному */
+    font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif; /* Мультяшный шрифт */
+    display: flex; /* Flexbox для центрирования */
+    justify-content: center; /* Центр по горизонтали */
+    align-items: center; /* Центр по вертикали */
+    min-height: 100vh; /* Минимум на всю высоту экрана */
+    min-width: 320px; /* Минимальная ширина для мобильных */
 }
 
+/* #root: flexbox-контейнер для центрирования формы */
+#root {
+    width: 100%; /* На всю ширину */
+    display: flex; /* Flexbox */
+    justify-content: center; /* Центрируем по горизонтали */
+    align-items: center; /* Центрируем по вертикали */
+}
+
+/* ============================================
+   ТИПОГРАФИКА
+   ============================================ */
+
+/* Заголовок h1: малиновый цвет, заглавные буквы */
 h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+    color: var(--color-magenta); /* Малиновый цвет через переменную */
+    text-transform: uppercase; /* Все буквы заглавные */
+    letter-spacing: 2px; /* Расстояние между буквами */
+    font-size: 2.5rem; /* Размер текста */
+    line-height: 1.1; /* Межстрочный интервал */
+    text-align: center; /* Центрирование */
+    margin-bottom: 20px; /* Отступ снизу */
 }
 
+/* Ссылки: розовый цвет, без подчёркивания */
+a {
+    font-weight: 600; /* Жирный текст */
+    color: var(--color-pink); /* Розовый цвет через переменную */
+    text-decoration: none; /* Без подчёркивания */
+}
+
+/* При наведении на ссылку: темнее и подчёркивание */
+a:hover {
+    color: var(--color-magenta); /* Более тёмный розовый (малиновый) через переменную */
+    text-decoration: underline; /* Подчёркивание */
+}
+
+/* ============================================
+   КОНТЕЙНЕР ФОРМЫ
+   ============================================ */
+
+/* Контейнер формы: белый фон, розовая рамка, зеленая тень */
+.register-container {
+    background: var(--color-white); /* Белый фон формы через переменную */
+    border: 4px solid var(--color-pink-bright); /* Ярко-розовая толстая рамка через переменную */
+    border-radius: 30px; /* Сильное скругление углов */
+    box-shadow: 8px 8px 0px var(--color-green-shadow); /* Зеленая жёсткая тень через переменную (мультяшный эффект) */
+    padding: 2rem; /* Внутренние отступы (32px) */
+    max-width: 400px; /* Максимальная ширина */
+    width: 100%; /* На мобильных растягивается */
+    color: var(--color-text-green); /* Тёмно-зелёный текст по умолчанию через переменную */
+}
+
+/* Параграф внизу формы: центрирование, отступ сверху */
+.register-container p {
+    text-align: center; /* Центрирование текста */
+    margin-top: 20px; /* Отступ сверху от кнопки */
+    color: var(--color-text-green); /* Тёмно-зелёный цвет через переменную */
+}
+
+/* Строка со ссылкой: inline-block для корректного отображения */
+.register-container .line {
+    display: inline-block; /* Инлайновый блок */
+}
+
+/* ============================================
+   ПОЛЯ ВВОДА
+   ============================================ */
+
+/* Группа input: вертикальная компоновка label + input + error */
+.input-group {
+    margin-bottom: 15px; /* Отступ снизу между полями */
+    display: flex; /* Flexbox */
+    flex-direction: column; /* Вертикальная ориентация */
+}
+
+/* Label: жирный текст, темно-зелёный цвет */
+.input-group label {
+    margin-bottom: 8px; /* Отступ между label и input */
+    font-weight: 600; /* Жирный текст */
+    color: var(--color-text-green); /* Тёмно-зелёный цвет через переменную */
+}
+
+/* Input: салатовая рамка, светло-зелёный фон, скругления */
+.input-group input {
+    border: 3px solid var(--color-green-border); /* Салатовая толстая рамка через переменную */
+    border-radius: 15px; /* Скругление углов */
+    padding: 12px; /* Внутренние отступы */
+    background-color: var(--color-green-bg); /* Очень светло-зелёный фон через переменную */
+    color: var(--color-text-green); /* Тёмно-зелёный текст при вводе через переменную */
+    outline: none; /* Убираем стандартный outline */
+    font-size: 14px; /* Размер текста */
+    transition: all 0.3s ease; /* Плавная анимация изменений */
+}
+
+/* При фокусе на input: розовая рамка и розовая тень */
+.input-group input:focus {
+    border-color: var(--color-pink); /* Розовая рамка через переменную */
+    box-shadow: 4px 4px 0px var(--color-pink-light); /* Розовая жёсткая тень через переменную */
+    transform: scale(1.02); /* Лёгкое увеличение (мультяшный эффект) */
+}
+
+/* ============================================
+   ОШИБКИ
+   ============================================ */
+
+/* Текст ошибки под полем: розовый, мелкий, жирный */
+.error-text {
+    color: var(--color-pink); /* Розовый цвет текста через переменную (НЕ зелёный!) */
+    font-size: 0.85rem; /* Мелкий размер */
+    margin-top: 5px; /* Отступ сверху от input */
+    font-weight: 600; /* Жирный текст */
+}
+
+/* Блок серверной ошибки: светло-розовый фон, розовая рамка */
+.register-container .error-msg {
+    background-color: var(--color-pink-lightest); /* Светло-розовый фон через переменную */
+    color: var(--color-pink-darker); /* Тёмно-розовый текст через переменную */
+    padding: 12px; /* Внутренние отступы */
+    margin-bottom: 15px; /* Отступ снизу */
+    border-radius: 15px; /* Скругление углов */
+    border: 3px solid var(--color-pink-bright); /* Розовая толстая рамка через переменную */
+    border-left: 6px solid var(--color-magenta); /* Толстая малиновая рамка слева через переменную (акцент) */
+    font-weight: 600; /* Жирный текст */
+}
+
+/* ============================================
+   КНОПКА
+   ============================================ */
+
+/* Кнопка: розовый фон, белый текст, тень внизу для эффекта "выпуклости" */
 button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
+    width: 100%; /* Во всю ширину контейнера */
+    padding: 14px 20px; /* Вертикальные и горизонтальные отступы */
+    background-color: var(--color-pink); /* Основной розовый фон через переменную */
+    color: var(--color-white); /* Белый текст через переменную */
+    border: none; /* Без рамки */
+    border-radius: 50px; /* Очень сильное скругление (таблетка) */
+    font-weight: bold; /* Жирный текст */
+    font-size: 1.1rem; /* Крупный размер текста */
+    font-family: inherit; /* Наследуем шрифт от body */
+    cursor: pointer; /* Курсор-указатель */
+    box-shadow: 0 5px 0 var(--color-pink-dark); /* Тёмно-розовая тень внизу через переменную (эффект выпуклости) */
+    transition: all 0.1s; /* Быстрая анимация для эффекта нажатия */
 }
-button:hover {
-  border-color: #646cff;
+
+/* При наведении на кнопку: небольшое затемнение */
+button:hover:not(:disabled) {
+    background-color: var(--color-magenta); /* Более тёмный розовый (малиновый) через переменную */
 }
+
+/* При нажатии на кнопку: тень исчезает, кнопка "вдавливается" */
+button:active {
+    box-shadow: 0 0 0 var(--color-pink-dark); /* Убираем тень (но оставляем переменную для единообразия) */
+    transform: translateY(5px); /* Сдвигаем вниз на 5px (эффект нажатия) */
+}
+
+/* Кнопка в состоянии disabled: серая, без тени, cursor not-allowed */
+button:disabled {
+    background-color: var(--color-gray); /* Серый фон через переменную */
+    box-shadow: none; /* Без тени */
+    cursor: not-allowed; /* Курсор "запрещено" */
+}
+
+/* При фокусе на кнопке: outline для accessibility */
 button:focus,
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+    outline: 3px solid var(--color-pink-light); /* Светло-розовый outline через переменную */
+    outline-offset: 2px; /* Отступ outline от кнопки */
 }
