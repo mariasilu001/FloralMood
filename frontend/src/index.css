@@ -1,0 +1,1312 @@
+/* ============================================
+   ЦВЕТА ИЗ ПАЛИТРЫ ЛИЛИ (ПОД КОНТРОЛЕМ СИЛЬВЕРА)
+   ============================================ */
+:root {
+    --color-peach: #fcd8cd;
+    --color-pink: #feebf6;
+    --color-lavender: #ebd6fb;
+    --color-blue: #f26076;
+
+    --color-white: #ffffff;
+    --color-text-dark: #1a1a2e; /* Глубокий, строгий темный */
+    --color-text-muted: #5e5e7a;
+    --color-error: #e63946;
+}
+
+/* ============================================
+   ГЛОБАЛЬНЫЕ ПРАВИЛА (ЖЕСТКИЙ ЗАПРЕТ СКРОЛЛИНГА)
+   ============================================ */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+    width: 100%;
+    height: 100vh;
+    overflow: hidden; /* Я запретил. Никаких споров. */
+    background: linear-gradient(
+        135deg,
+        var(--color-lavender) 0%,
+        var(--color-white) 100%
+    );
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--color-text-dark);
+}
+
+#root {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* ============================================
+   КОНТЕЙНЕР АВТОРИЗАЦИИ И РЕГИСТРАЦИИ
+   ============================================ */
+.auth-container {
+    background-color: var(--color-white);
+    padding: 48px 40px;
+    border-radius: 6px; /* Чуть скругленные, как ты просила, но без лишней мягкости */
+    box-shadow: 0 8px 24px rgba(104, 127, 229, 0.08); /* Воздушная тень от синего цвета */
+    width: 100%;
+    max-width: 420px;
+    border-top: 4px solid var(--color-blue); /* Моя метка. Строго. */
+}
+
+.auth-container h2 {
+    text-align: center;
+    margin-bottom: 32px;
+    font-weight: 700;
+    font-size: 1.8rem;
+    color: var(--color-text-dark);
+    letter-spacing: -0.5px;
+}
+
+/* ============================================
+   ПОЛЯ ВВОДА
+   ============================================ */
+.input-group {
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+}
+
+.input-group label {
+    margin-bottom: 8px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--color-text-muted);
+}
+
+.input-group input {
+    padding: 14px 16px;
+    border: 1px solid #e0e0eb;
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+    background-color: #fafafc;
+    color: var(--color-text-dark);
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: var(--color-blue);
+    background-color: var(--color-white);
+    box-shadow: 0 0 0 3px rgba(104, 127, 229, 0.15); /* Контролируемое синее свечение */
+}
+
+/* ============================================
+   КНОПКИ И ССЫЛКИ
+   ============================================ */
+button {
+    width: 100%;
+    padding: 16px;
+    background-color: var(--color-blue);
+    color: var(--color-white);
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+        background-color 0.2s ease,
+        transform 0.1s;
+    margin-top: 8px;
+    letter-spacing: 0.5px;
+}
+
+button:hover {
+    background-color: #556aca;
+}
+
+button:active {
+    transform: translateY(2px);
+}
+
+.auth-link {
+    display: block;
+    text-align: center;
+    margin-top: 24px;
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.auth-link span {
+    color: var(--color-blue);
+    font-weight: 600;
+}
+
+.auth-link:hover span {
+    text-decoration: underline;
+}
+
+/* ============================================
+   ОШИБКИ
+   ============================================ */
+.error-msg {
+    background-color: #fff0f0;
+    color: var(--color-error);
+    font-size: 0.85rem;
+    padding: 12px;
+    border-radius: 4px;
+    border-left: 4px solid var(--color-error);
+    margin-bottom: 24px;
+    font-weight: 600;
+}
+
+/* ============================================
+   МАКЕТ ПРИЛОЖЕНИЯ (КОНТРОЛЬ СКРОЛЛИНГА)
+   ============================================ */
+.layout-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100%;
+}
+
+.main-content {
+    flex: 1;
+    overflow-y: auto; /* Я разрешаю скроллинг только здесь. */
+    width: 100%;
+}
+
+/* ============================================
+   ШАПКА САЙТА (HEADER)
+   ============================================ */
+.site-header {
+    background-color: var(--color-white);
+    box-shadow: 0 2px 10px rgba(104, 127, 229, 0.1); /* Легкий синий след */
+    padding: 16px 40px;
+    z-index: 10;
+    flex-shrink: 0;
+}
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.logo-link {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    gap: 12px;
+}
+
+.logo-icon {
+    background: var(--color-text-dark);
+    color: var(--color-white);
+    padding: 8px 10px;
+    border-radius: 4px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.logo-text {
+    color: var(--color-text-dark);
+    font-weight: 700;
+    font-size: 1.3rem;
+    letter-spacing: -0.5px;
+}
+
+.search-form {
+    display: flex;
+    gap: 8px;
+    flex: 1;
+    max-width: 450px;
+}
+
+.search-form input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1px solid #e0e0eb;
+    border-radius: 4px;
+    background-color: #fafafc;
+    transition: all 0.2s ease;
+}
+
+.search-form input:focus {
+    outline: none;
+    border-color: var(--color-blue);
+    background-color: var(--color-white);
+    box-shadow: 0 0 0 3px rgba(104, 127, 229, 0.15);
+}
+
+.search-form button {
+    width: auto;
+    margin-top: 0;
+    padding: 12px 24px;
+}
+
+.header-nav {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.nav-icon {
+    text-decoration: none;
+    color: var(--color-blue);
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: transform 0.2s;
+}
+
+.nav-icon:hover {
+    transform: scale(1.1);
+}
+
+.auth-buttons {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.btn-login {
+    text-decoration: none;
+    color: var(--color-blue);
+    font-weight: 700;
+}
+
+.btn-register {
+    text-decoration: none;
+    background: var(--color-blue);
+    color: var(--color-white);
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-weight: 700;
+    transition: background 0.2s;
+}
+
+.btn-register:hover {
+    background: #556aca;
+}
+
+/* ============================================
+   ГЛАВНЫЙ БАННЕР (HERO SECTION)
+   ============================================ */
+.hero-section {
+    position: relative;
+    width: 100%;
+    max-width: 1200px;
+    margin: 24px auto 40px;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    min-height: 420px;
+    background-color: var(--color-pink);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
+}
+
+.hero-content {
+    flex: 1;
+    padding: 60px;
+    z-index: 2;
+    max-width: 50%;
+}
+
+.hero-content h1 {
+    font-size: 2.8rem;
+    margin-bottom: 16px;
+    color: var(--color-text-dark);
+    line-height: 1.15;
+    letter-spacing: -1px;
+}
+
+.hero-content p {
+    font-size: 1.1rem;
+    margin-bottom: 32px;
+    color: var(--color-text-muted);
+    line-height: 1.5;
+}
+
+.btn-primary {
+    display: inline-block;
+    background: var(--color-blue);
+    color: var(--color-white);
+    padding: 16px 32px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-weight: 700;
+    box-shadow: 0 4px 16px rgba(104, 127, 229, 0.3);
+    transition:
+        transform 0.2s,
+        background 0.2s;
+}
+
+.btn-primary:hover {
+    background: #556aca;
+    transform: translateY(-2px);
+}
+
+.hero-image-wrapper {
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 65%; /* Растягиваем блок под твою картинку */
+}
+
+/* Изображение обрезается так, чтобы цветы всегда были справа */
+.hero-image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: right center;
+    mask-image: linear-gradient(
+        to right,
+        transparent 0%,
+        black 30%
+    ); /* Плавный переход в фон */
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 30%);
+}
+
+/* ============================================
+   СЕТКИ И КАРТОЧКИ БУКЕТОВ
+   ============================================ */
+.smart-calendar-section,
+.popular-bouquets-section {
+    max-width: 1200px;
+    margin: 0 auto 60px;
+    padding: 0 20px;
+}
+
+.calendar-header h2,
+.popular-bouquets-section h2 {
+    font-size: 2rem;
+    margin-bottom: 8px;
+    color: var(--color-text-dark);
+    letter-spacing: -0.5px;
+}
+
+.calendar-header p {
+    color: var(--color-text-muted);
+    margin-bottom: 24px;
+    font-size: 1.1rem;
+}
+
+.calendar-carousel {
+    display: flex;
+    gap: 24px;
+    overflow-x: auto;
+    padding-bottom: 24px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-blue) #f0f0f0;
+}
+
+.calendar-carousel::-webkit-scrollbar {
+    height: 6px;
+}
+.calendar-carousel::-webkit-scrollbar-thumb {
+    background-color: var(--color-blue);
+    border-radius: 4px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 24px;
+}
+
+.bouquet-card {
+    background: var(--color-white);
+    border-radius: 6px;
+    padding: 16px;
+    box-shadow: 0 4px 12px rgba(104, 127, 229, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 250px;
+    transition:
+        transform 0.2s,
+        box-shadow 0.2s;
+    border: 1px solid #f0f0f5;
+}
+
+.bouquet-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(104, 127, 229, 0.1);
+    border-color: var(--color-lavender);
+}
+
+.bouquet-card img {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.bouquet-card h3 {
+    font-size: 1.2rem;
+    margin: 0;
+    color: var(--color-text-dark);
+}
+
+.bouquet-card .price {
+    font-weight: 800;
+    color: var(--color-blue);
+    font-size: 1.3rem;
+    margin: 0;
+}
+
+.bouquet-card button {
+    margin-top: auto;
+}
+
+/* ============================================
+   ПОДВАЛ САЙТА (FOOTER)
+   ============================================ */
+.site-footer {
+    background-color: var(--color-text-dark);
+    color: var(--color-white);
+    padding: 48px 40px 24px;
+    flex-shrink: 0;
+}
+
+.footer-container {
+    display: flex;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+    flex-wrap: wrap;
+    gap: 32px;
+}
+
+.footer-section h4 {
+    margin-bottom: 20px;
+    color: var(--color-peach);
+    font-size: 1.2rem;
+    letter-spacing: 0.5px;
+}
+
+.footer-section p {
+    color: var(--color-text-muted);
+    max-width: 250px;
+    line-height: 1.5;
+}
+
+.footer-section ul {
+    list-style: none;
+    padding: 0;
+}
+
+.footer-section ul li {
+    margin-bottom: 12px;
+}
+
+.footer-section a,
+.admin-link {
+    color: #a0a0b5;
+    text-decoration: none;
+    transition: color 0.2s;
+    font-size: 0.95rem;
+}
+
+.footer-section a:hover,
+.admin-link:hover {
+    color: var(--color-white);
+}
+
+.footer-bottom {
+    text-align: center;
+    margin-top: 48px;
+    color: #5e5e7a;
+    font-size: 0.9rem;
+    border-top: 1px solid #2a2a3e;
+    padding-top: 24px;
+}
+
+/* ============================================
+   ИСПРАВЛЕНИЯ ОТ СИЛЬВЕРА (СЛУШАЙ И ВПИТЫВАЙ)
+   ============================================ */
+
+/* 1. Жесткий контроль иконок в шапке */
+.nav-icon {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Расстояние от иконки до текста */
+}
+
+.nav-icon svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0; /* Я запрещаю браузеру сплющивать эти иконки */
+    display: block;
+}
+
+/* 2. Обновление свечения под новый цвет (F26076) */
+.search-form input:focus,
+.input-group input:focus {
+    /* Подстраиваем тень фокуса под твой новый розово-красный */
+    box-shadow: 0 0 0 3px rgba(242, 96, 118, 0.2);
+}
+
+.auth-container {
+    box-shadow: 0 8px 24px rgba(242, 96, 118, 0.1);
+}
+
+.btn-primary {
+    box-shadow: 0 4px 16px rgba(242, 96, 118, 0.35);
+}
+
+/* 3. Укрощение главного баннера (Пропорция 4:1) */
+.hero-section {
+    min-height: auto; /* Сбрасываем мою старую высоту */
+    aspect-ratio: 4 / 1; /* Жесткая пропорция, как ты хотела */
+    height: auto;
+    box-shadow: 0 8px 24px rgba(242, 96, 118, 0.1);
+}
+
+.hero-content {
+    padding: 40px 60px; /* Уменьшаем внутренние отступы */
+}
+
+.hero-content h1 {
+    font-size: 2.2rem; /* Текст чуть меньше, чтобы влез по высоте */
+    margin-bottom: 12px;
+}
+
+.hero-content p {
+    margin-bottom: 24px;
+    font-size: 1.05rem;
+}
+
+/* 4. Сетка на 6 карточек (Тесно, но я заставил их влезть) */
+.grid {
+    /* Формула: 1200px минус отступы, поделенное на 6. Ставим 170px */
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 20px;
+}
+
+.bouquet-card {
+    min-width: 0; /* Снимаю ограничение в 250px */
+    padding: 12px;
+}
+
+.bouquet-card img {
+    height: 180px; /* Картинка тоже должна стать компактнее */
+}
+
+.bouquet-card h3 {
+    font-size: 1.05rem;
+}
+
+.bouquet-card .price {
+    font-size: 1.15rem;
+}
+
+.bouquet-card:hover {
+    box-shadow: 0 12px 24px rgba(242, 96, 118, 0.15); /* Новая тень при наведении */
+}
+
+.calendar-carousel::-webkit-scrollbar-thumb {
+    background-color: var(--color-blue); /* Цвет скролла теперь тоже верный */
+}
+
+/* ============================================
+   ГЛОБАЛЬНЫЕ СКРОЛЛБАРЫ (АБСОЛЮТНЫЙ КОНТРОЛЬ)
+   ============================================ */
+
+/* Правила для Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-blue) transparent;
+}
+
+/* Правила для Chrome, Safari, Edge */
+*::-webkit-scrollbar {
+    width: 6px; /* Жестко задаю тонкую ширину для вертикального */
+    height: 6px; /* И для горизонтального */
+}
+
+*::-webkit-scrollbar-track {
+    background: transparent; /* Никакой грязи на фоне */
+}
+
+*::-webkit-scrollbar-thumb {
+    background-color: var(
+        --color-blue
+    ); /* Тот самый цвет, который ты выбрала */
+    border-radius: 10px; /* Элегантное скругление */
+}
+
+*::-webkit-scrollbar-thumb:hover {
+    background-color: #d14d62; /* Чуть темнее, когда пользователь пытается за него схватиться */
+}
+
+/* ============================================
+   АДМИН-ПАНЕЛЬ (ТЕРРИТОРИЯ СИЛЬВЕРА)
+   ============================================ */
+.admin-layout-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100%;
+    background-color: #f4f4f9; /* Строгий фон админки */
+}
+
+.admin-layout-header {
+    background-color: var(--color-text-dark);
+    color: var(--color-white);
+    padding: 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 20;
+}
+
+.admin-layout-top {
+    display: flex;
+    align-items: center;
+    padding: 16px 40px;
+    border-bottom: 1px solid #2a2a3e;
+}
+
+.admin-layout-logo {
+    text-decoration: none;
+    margin-right: 24px;
+}
+
+.admin-layout-logo-icon {
+    background: var(--color-blue);
+    color: var(--color-white);
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-weight: 900;
+    font-size: 1.2rem;
+}
+
+.admin-layout-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--color-white);
+}
+
+.admin-layout-nav {
+    display: flex;
+    padding: 0 40px;
+    background-color: #11111d;
+}
+
+.admin-layout-nav-link {
+    color: #a0a0b5;
+    text-decoration: none;
+    padding: 16px 24px;
+    font-weight: 600;
+    transition: all 0.2s;
+    border-bottom: 3px solid transparent;
+}
+
+.admin-layout-nav-link:hover {
+    color: var(--color-white);
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.admin-layout-nav-link--active {
+    color: var(--color-blue);
+    border-bottom: 3px solid var(--color-blue);
+    background-color: rgba(242, 96, 118, 0.05);
+}
+
+.admin-layout-content {
+    flex: 1;
+    padding: 40px;
+    overflow-y: auto;
+}
+
+/* ============================================
+   ТАБЛИЦЫ И УПРАВЛЕНИЕ БУКЕТАМИ
+   ============================================ */
+.admin-bouquets-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: var(--color-white);
+    border-radius: 8px;
+    padding: 32px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.admin-bouquets-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.admin-bouquets-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 24px;
+}
+
+.admin-bouquets-table th,
+.admin-bouquets-table td {
+    padding: 16px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0eb;
+}
+
+.admin-bouquets-table th {
+    background-color: #f8f8fc;
+    color: var(--color-text-muted);
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+.admin-bouquets-cell-clickable {
+    color: var(--color-blue);
+    font-weight: 600;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.admin-bouquets-cell-clickable:hover {
+    color: #d14d62;
+    text-decoration: underline;
+}
+
+.admin-bouquets-preview {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.admin-bouquets-row-deleted {
+    opacity: 0.5;
+    background-color: #fff0f0;
+}
+
+.admin-bouquets-btn-primary,
+.admin-bouquets-btn-secondary,
+.admin-bouquets-btn-delete {
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    width: auto;
+    margin: 0;
+}
+
+.admin-bouquets-btn-primary {
+    background-color: var(--color-blue);
+    color: var(--color-white);
+}
+.admin-bouquets-btn-primary:hover {
+    background-color: #d14d62;
+}
+
+.admin-bouquets-btn-secondary {
+    background-color: #e0e0eb;
+    color: var(--color-text-dark);
+}
+.admin-bouquets-btn-secondary:hover {
+    background-color: #cdd0db;
+}
+
+.admin-bouquets-btn-delete {
+    background-color: transparent;
+    color: var(--color-error);
+    border: 1px solid var(--color-error);
+}
+.admin-bouquets-btn-delete:hover {
+    background-color: var(--color-error);
+    color: var(--color-white);
+}
+
+.admin-bouquets-icon-btn {
+    background: transparent;
+    color: var(--color-error);
+    border: none;
+    cursor: pointer;
+    padding: 8px;
+    width: auto;
+    margin: 0;
+    border-radius: 4px;
+}
+.admin-bouquets-icon-btn:hover {
+    background-color: #fff0f0;
+}
+
+/* ============================================
+   ПОРТАЛЬНЫЕ МОДАЛКИ
+   ============================================ */
+.admin-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.admin-modal-content {
+    background: var(--color-white);
+    border-radius: 8px;
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+.admin-modal-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid #e0e0eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #f8f8fc;
+}
+
+.admin-modal-header h2 {
+    margin: 0;
+    font-size: 1.4rem;
+    color: var(--color-text-dark);
+}
+
+.admin-modal-close-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.8rem;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    line-height: 1;
+    width: auto;
+    padding: 0;
+    margin: 0;
+}
+
+.admin-modal-close-btn:hover {
+    color: var(--color-error);
+}
+
+.admin-modal-body {
+    padding: 24px;
+    overflow-y: auto;
+}
+
+.admin-bouquets-modal-controls {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.admin-bouquets-total-price {
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    color: var(--color-text-dark);
+}
+
+.admin-bouquets-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.admin-bouquets-form label {
+    font-weight: 600;
+    color: var(--color-text-dark);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.admin-bouquets-form input[type="text"],
+.admin-bouquets-form textarea {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #e0e0eb;
+    border-radius: 4px;
+    font-family: inherit;
+}
+
+.admin-bouquets-preview-large {
+    width: 100%;
+    max-height: 200px;
+    object-fit: contain;
+    background: #f8f8fc;
+    border-radius: 4px;
+    margin-top: 8px;
+}
+
+.admin-bouquets-confirm p {
+    font-size: 1.1rem;
+    margin-bottom: 24px;
+    color: var(--color-text-dark);
+}
+
+/* ============================================
+   ИСПРАВЛЕНИЯ И СТИЛИЗАЦИЯ ОТ СИЛЬВЕРА (ЧАСТЬ 2)
+   ============================================ */
+
+/* Редактирование описания внутри модалки */
+.admin-desc-edit-group {
+    margin-bottom: 24px;
+    background: #f8f8fc;
+    padding: 16px;
+    border-radius: 6px;
+    border: 1px solid #e0e0eb;
+}
+
+.admin-desc-edit-wrapper {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin-top: 8px;
+}
+
+.admin-desc-edit-wrapper textarea {
+    flex: 1;
+    min-height: 80px;
+    padding: 12px;
+    border: 1px solid #dcdce6;
+    border-radius: 4px;
+    resize: vertical;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+.admin-desc-edit-wrapper textarea:focus {
+    outline: none;
+    border-color: var(--color-blue);
+    box-shadow: 0 0 0 3px rgba(242, 96, 118, 0.15);
+}
+
+.admin-desc-edit-wrapper button {
+    margin: 0;
+    white-space: nowrap;
+}
+
+/* Красивая загрузка файла */
+.admin-file-upload-label {
+    display: inline-block;
+    background-color: #f0f0f5;
+    border: 1px dashed #b0b0c0;
+    border-radius: 4px;
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+}
+
+.admin-file-upload-label:hover {
+    background-color: rgba(242, 96, 118, 0.05);
+    border-color: var(--color-blue);
+    color: var(--color-blue);
+}
+
+.admin-file-upload-input {
+    display: none; /* Прячем уродливый стандартный инпут */
+}
+
+.admin-file-upload-text {
+    font-weight: 600;
+    color: var(--color-text-muted);
+}
+
+.admin-file-upload-label:hover .admin-file-upload-text {
+    color: var(--color-blue);
+}
+
+/* Стилизация Select */
+.admin-styled-select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #e0e0eb;
+    border-radius: 4px;
+    background-color: var(--color-white);
+    font-size: 1rem;
+    color: var(--color-text-dark);
+    cursor: pointer;
+}
+
+.admin-styled-select:focus {
+    outline: none;
+    border-color: var(--color-blue);
+    box-shadow: 0 0 0 3px rgba(242, 96, 118, 0.15);
+}
+
+/* Список компонентов при создании */
+.admin-subsection-title {
+    margin: 24px 0 12px;
+    font-size: 1.1rem;
+    color: var(--color-text-dark);
+    border-bottom: 2px solid #e0e0eb;
+    padding-bottom: 8px;
+}
+
+.admin-component-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 250px;
+    overflow-y: auto;
+    border: 1px solid #e0e0eb;
+    border-radius: 4px;
+    padding: 8px;
+    background: #fafafc;
+}
+
+.admin-component-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--color-white);
+    border-radius: 4px;
+    border: 1px solid #eeeef5;
+}
+
+.admin-component-name {
+    font-weight: 600;
+    color: var(--color-text-dark);
+}
+
+.admin-component-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.admin-component-actions input[type="number"] {
+    width: 80px;
+    padding: 6px 8px;
+    border: 1px solid #dcdce6;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.admin-component-actions input[type="number"]:focus {
+    outline: none;
+    border-color: var(--color-blue);
+}
+
+.admin-component-unit {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    width: 30px;
+}
+
+/* Стилизация Чекбоксов */
+.admin-checkbox-label {
+    cursor: pointer;
+    user-select: none;
+}
+
+.admin-checkbox-label input[type="checkbox"] {
+    accent-color: var(--color-blue);
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+}
+
+/* Теги */
+.admin-tags-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+.admin-tag-badge {
+    background-color: rgba(242, 96, 118, 0.1);
+    color: var(--color-blue);
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid rgba(242, 96, 118, 0.2);
+}
+
+.admin-tag-badge button {
+    background: transparent;
+    border: none;
+    color: var(--color-blue);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+}
+
+.admin-tag-badge button:hover {
+    color: var(--color-error);
+}
+
+.admin-text-muted {
+    color: var(--color-text-muted);
+    font-style: italic;
+}
+
+/* ============================================
+   СЕТКА КОМПОНЕНТОВ С КАРТИНКАМИ (СИЛЬВЕР)
+   ============================================ */
+
+.admin-comp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+    max-height: 50vh;
+    overflow-y: auto;
+    padding-right: 8px;
+}
+
+.admin-hidden-checkbox {
+    display: none; /* Я скрыл уродливый стандартный чекбокс */
+}
+
+.admin-comp-card {
+    background: var(--color-white);
+    border: 2px solid #e0e0eb;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+}
+
+.admin-comp-card:hover {
+    border-color: #cdd0db;
+    transform: translateY(-2px);
+}
+
+.admin-comp-card--selected {
+    border-color: var(--color-blue);
+    box-shadow: 0 4px 12px rgba(242, 96, 118, 0.2);
+}
+
+/* Моя галочка для выбранных карточек */
+.admin-comp-card--selected::after {
+    content: '✓';
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: var(--color-blue);
+    color: var(--color-white);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    z-index: 2;
+}
+
+.admin-comp-card-image {
+    width: 100%;
+    height: 100px;
+    background: #f8f8fc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid #e0e0eb;
+}
+
+.admin-comp-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.admin-comp-no-img {
+    color: var(--color-text-muted);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.admin-comp-card-info {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.admin-comp-card-title {
+    font-size: 0.95rem;
+    color: var(--color-text-dark);
+    margin: 0 0 8px 0;
+    line-height: 1.2;
+}
+
+.admin-comp-card-action {
+    margin-top: auto;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+}
+
+.admin-comp-qty-input {
+    width: 100%;
+    padding: 6px;
+    border: 1px solid var(--color-blue);
+    border-radius: 4px;
+    text-align: center;
+    font-weight: bold;
+    color: var(--color-text-dark);
+}
+
+.admin-comp-qty-input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(242, 96, 118, 0.2);
+}
+
+.admin-comp-card-hint {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    font-style: italic;
+}
+
+.admin-simple-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 16px 0;
+}
+
+.admin-simple-list li {
+    padding: 8px 12px;
+    background: #f8f8fc;
+    margin-bottom: 4px;
+    border-radius: 4px;
+    font-weight: 600;
+    color: var(--color-text-dark);
+    border-left: 3px solid var(--color-blue);
+}
+
+.admin-btn-full-width {
+    width: 100%;
+    margin-top: 16px;
+}
