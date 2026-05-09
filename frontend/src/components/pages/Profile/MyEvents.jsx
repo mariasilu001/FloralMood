@@ -10,11 +10,11 @@ const MyEvents = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
-    // Твой старый стейт. Я его сохранил.
+    // Я привел ключи в порядок. Запомни их, Лили.
     const [newEvent, setNewEvent] = useState({
         name: "",
-        event_type_id: "",
-        event_date: "",
+        eventTypeId: "", // Исправлено с event_type_id
+        date: "", // Исправлено с event_date
     });
 
     // Если данные еще не пришли, ты стоишь и ждешь. Никаких крашей.
@@ -43,6 +43,7 @@ const MyEvents = () => {
     const handleAddEvent = async (e) => {
         e.preventDefault();
 
+        // Теперь эта проверка сработает как надо
         if (!newEvent.name || !newEvent.eventTypeId || !newEvent.date) {
             alert("Все поля обязательны. Я не терплю пустоты.");
             return;
@@ -72,7 +73,7 @@ const MyEvents = () => {
             await api.post("/me/events", {
                 name: newEvent.name,
                 eventTypeId: parseInt(newEvent.eventTypeId),
-                date: newEvent.date,
+                eventDate: newEvent.date,
             });
             await fetchMeData(); // Заставляю приложение обновиться
             setIsModalOpen(false);
@@ -205,7 +206,7 @@ const MyEvents = () => {
                             onChange={(e) =>
                                 setNewEvent({
                                     ...newEvent,
-                                    event_type_id: e.target.value,
+                                    eventTypeId: e.target.value, // Исправлено на правильный ключ
                                 })
                             }
                             className="admin-styled-select"
@@ -239,7 +240,7 @@ const MyEvents = () => {
                             onChange={(e) =>
                                 setNewEvent({
                                     ...newEvent,
-                                    date: e.target.value,
+                                    date: e.target.value, // Исправлено на правильный ключ
                                 })
                             }
                             required

@@ -158,11 +158,11 @@ const getEvents = async (req, res, next) => {
 
 const addEvent = async (req, res, next) => {
     try {
-        const { name, date, eventTypeId } = req.body;
+        const { name, eventDate, eventTypeId } = req.body;
         const newEvent = await models.Event.create({
             userId: req.user.userId,
             name,
-            date,
+            eventDate,
             eventTypeId,
         });
         return res.status(201).json({ event: newEvent });
