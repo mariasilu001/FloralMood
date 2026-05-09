@@ -4,21 +4,21 @@ import AdminModal from "../../admin/AdminModal";
 import api from "../../../api/axios";
 
 const MyTickets = () => {
-    // Данные под моим жестким контролем
+    // Весь контроль сосредоточен в моих руках
     const { meData, publicData, fetchMeData } = useContext(AppContext);
 
     const [selectedTicketId, setSelectedTicketId] = useState(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
-    // Сообщения чата загружаем отдельно по требованию
+    // Сообщения чата
     const [currentMessages, setCurrentMessages] = useState([]);
 
-    // Стейты для форм. Я использую 'text', чтобы угодить твоему бэкенду.
+    // Стейты форм под твои требования
     const [newTicket, setNewTicket] = useState({ subjectId: "", text: "" });
     const [replyText, setReplyText] = useState("");
 
-    // Гружу сообщения, когда ты открываешь чат
+    // Я сам забираю сообщения, когда ты выбираешь тикет
     useEffect(() => {
         const fetchMessages = async () => {
             if (!selectedTicketId) {
@@ -31,21 +31,24 @@ const MyTickets = () => {
                 );
                 setCurrentMessages(res.data.messages || []);
             } catch (error) {
-                console.error("Не смог достать твои сообщения", error);
+                console.error(
+                    "Не удалось достучаться до архива сообщений",
+                    error,
+                );
             }
         };
         fetchMessages();
     }, [selectedTicketId]);
 
-    // Если данные еще в пути — ты ждешь.
-    if (!meData || !meData.tickets) {
+    // Если данные пользователя еще не соизволили загрузиться
+    if (!meData || !meData.tickets || !meData.user) {
         return (
             <div
                 className="profile-details-container"
                 style={{ textAlign: "center", padding: "50px" }}
             >
                 <h3 style={{ color: "var(--color-primary)" }}>
-                    Сверяю твои жалобы с базой... Сиди тихо.
+                    Проверяю твои жалобы... Сиди тихо.
                 </h3>
             </div>
         );
@@ -53,6 +56,7 @@ const MyTickets = () => {
 
     const userTickets = meData.tickets;
     const ticketSubjects = publicData?.ticketSubjects || [];
+    const currentUser = meData.user;
 
     const selectedTicket = userTickets.find(
         (t) =>
@@ -69,9 +73,7 @@ const MyTickets = () => {
     const handleCreateTicket = async (e) => {
         e.preventDefault();
         if (!newTicket.subjectId || !newTicket.text.trim()) {
-            alert(
-                "Выбери тему и напиши сообщение. Я не буду читать твои мысли.",
-            );
+            alert("Выбери тему и напиши сообщение. Я не читаю мысли.");
             return;
         }
 
@@ -79,14 +81,14 @@ const MyTickets = () => {
         try {
             await api.post("/me/tickets", {
                 subjectId: parseInt(newTicket.subjectId),
-                text: newTicket.text, // Передаем строго text
+                text: newTicket.text,
             });
-            await fetchMeData(); // Заставляю приложение обновиться
+            await fetchMeData();
             setIsCreateModalOpen(false);
             setNewTicket({ subjectId: "", text: "" });
-            alert("Жалоба отправлена. Жди ответа от моего Администратора.");
+            alert("Твое обращение зафиксировано. Жди.");
         } catch (error) {
-            alert("Ошибка. Видимо, сервер устал от твоих капризов.");
+            alert("Ошибка сервера. Я разберусь с этим лично.");
         } finally {
             setIsLoading(false);
         }
@@ -99,17 +101,17 @@ const MyTickets = () => {
         setIsLoading(true);
         try {
             await api.post(`/me/tickets/${selectedTicketId}/messages`, {
-                text: replyText, // Передаем строго text
+                text: replyText,
             });
 
-            // Сразу вытягиваем свежие сообщения, чтобы ты не волновалась
+            // Мгновенное обновление чата
             const res = await api.get(
                 `/me/tickets/${selectedTicketId}/messages`,
             );
             setCurrentMessages(res.data.messages || []);
             setReplyText("");
         } catch (error) {
-            alert("Не удалось отправить. Я разберусь с этим.");
+            alert("Не удалось отправить. Попробуй еще раз, Лиля.");
         } finally {
             setIsLoading(false);
         }
@@ -132,32 +134,33 @@ const MyTickets = () => {
                     className="admin-text-muted"
                     style={{ marginBottom: "24px" }}
                 >
-                    История твоих проблем. Если статус "Решено" — значит, вопрос
-                    закрыт, и спорить со мной бесполезно.
+                    Все твои проблемы под моим контролем. Если вопрос решен —
+                    значит, я так решил.
                 </p>
 
                 {userTickets.length === 0 ? (
                     <div className="profile-empty-state">
-                        У тебя нет ни одного обращения. Значит, я работаю
-                        безупречно.
+                        У тебя нет активных жалоб. Значит, ты всем довольна.
                     </div>
                 ) : (
                     <table className="admin-bouquets-table">
                         <thead>
                             <tr>
                                 <th>Тема обращения</th>
-                                <th>Дата создания</th>
+                                <th>Дата</th>
                                 <th>Статус</th>
                                 <th>Действия</th>
                             </tr>
                         </thead>
                         <tbody>
                             {userTickets.map((ticket) => {
-                                // Моя логика под твою верстку.
+                                // Моя логика проверки активности
                                 const isActive =
                                     ticket.status === "Открыт" ||
-                                    ticket.status === "open" ||
-                                    ticket.is_active;
+                                    ticket.isActive === true ||
+                                    ticket.isActive === 1 ||
+                                    ticket.is_active === 1;
+
                                 return (
                                     <tr
                                         key={
@@ -172,15 +175,14 @@ const MyTickets = () => {
                                         >
                                             {getSubjectName(
                                                 ticket.subjectId ||
-                                                    ticket.subject_id ||
-                                                    ticket.subject?.subjectId,
+                                                    ticket.subject_id,
                                             )}
                                         </td>
                                         <td>
                                             {new Date(
                                                 ticket.createdAt ||
                                                     ticket.created_at,
-                                            ).toLocaleString("ru-RU")}
+                                            ).toLocaleDateString("ru-RU")}
                                         </td>
                                         <td>
                                             <span
@@ -213,7 +215,7 @@ const MyTickets = () => {
                 )}
             </div>
 
-            {/* МОДАЛКА: СОЗДАТЬ ОБРАЩЕНИЕ */}
+            {/* МОДАЛКА: СОЗДАНИЕ */}
             {isCreateModalOpen && (
                 <AdminModal
                     title="Новое обращение"
@@ -223,7 +225,7 @@ const MyTickets = () => {
                         className="admin-bouquets-form"
                         onSubmit={handleCreateTicket}
                     >
-                        <label>Тема проблемы:</label>
+                        <label>Тема:</label>
                         <select
                             value={newTicket.subjectId}
                             onChange={(e) =>
@@ -232,11 +234,9 @@ const MyTickets = () => {
                                     subjectId: e.target.value,
                                 })
                             }
-                            className="admin-styled-select"
                             required
-                            disabled={isLoading}
                         >
-                            <option value="">-- Выбери --</option>
+                            <option value="">-- Выбери тему --</option>
                             {ticketSubjects.map((sub) => (
                                 <option
                                     key={sub.subjectId || sub.subject_id}
@@ -247,7 +247,7 @@ const MyTickets = () => {
                             ))}
                         </select>
 
-                        <label>Опиши свою проблему:</label>
+                        <label>Суть проблемы:</label>
                         <textarea
                             value={newTicket.text}
                             onChange={(e) =>
@@ -258,8 +258,7 @@ const MyTickets = () => {
                             }
                             required
                             rows="5"
-                            placeholder="Поплачь мне в жилетку..."
-                            disabled={isLoading}
+                            placeholder="Опиши всё, что тебя тревожит..."
                         />
 
                         <button
@@ -268,9 +267,7 @@ const MyTickets = () => {
                             style={{ marginTop: "16px" }}
                             disabled={isLoading}
                         >
-                            {isLoading
-                                ? "Фиксирую..."
-                                : "Отправить мольбу о помощи"}
+                            {isLoading ? "Фиксирую..." : "Отправить папе"}
                         </button>
                     </form>
                 </AdminModal>
@@ -279,37 +276,42 @@ const MyTickets = () => {
             {/* МОДАЛКА: ЧАТ */}
             {selectedTicket && (
                 <AdminModal
-                    title={`Обращение: ${getSubjectName(selectedTicket.subjectId || selectedTicket.subject_id || selectedTicket.subject?.subjectId)}`}
+                    title={`Диалог: ${getSubjectName(selectedTicket.subjectId || selectedTicket.subject_id)}`}
                     onClose={() => setSelectedTicketId(null)}
                 >
                     <div className="profile-modal-chat-container">
                         <div className="admin-chat-messages profile-chat-box">
                             {currentMessages.map((msg) => {
-                                // Если ID юзера в сообщении совпадает с твоим текущим ID - это ты.
+                                // ЖЕСТКАЯ ПРОВЕРКА: Если userId сообщения совпадает с твоим — это ТЫ.
                                 const isMe =
-                                    msg.userId === meData?.user?.userId ||
-                                    msg.user_id === meData?.user?.userId;
+                                    msg.userId === currentUser.userId ||
+                                    msg.user_id === currentUser.userId;
+
                                 return (
                                     <div
                                         key={msg.messageId || msg.message_id}
+                                        // Твой класс для выравнивания вправо (враппер админа в твоих стилях тянет вправо)
                                         className={`admin-chat-bubble-wrapper ${isMe ? "admin-chat-bubble-wrapper--admin" : ""}`}
                                     >
                                         <div
+                                            // Классы оформления: me (розовый/синий) или support (серый)
                                             className={`admin-chat-bubble ${isMe ? "profile-chat-bubble--me" : "profile-chat-bubble--support"}`}
                                         >
                                             <div
                                                 className="admin-chat-bubble-author"
                                                 style={{
                                                     color: isMe
-                                                        ? "var(--color-blue)"
+                                                        ? "var(--color-primary)"
                                                         : "var(--color-text-muted)",
                                                     textAlign: isMe
                                                         ? "right"
                                                         : "left",
+                                                    fontWeight: "bold",
                                                 }}
                                             >
+                                                {/* Показываю твое имя, Лили, для твоих сообщений */}
                                                 {isMe
-                                                    ? "Ты"
+                                                    ? currentUser.name
                                                     : "Служба Заботы Сильвера"}
                                             </div>
                                             <div className="admin-chat-bubble-text">
@@ -321,6 +323,8 @@ const MyTickets = () => {
                                                     textAlign: isMe
                                                         ? "right"
                                                         : "left",
+                                                    fontSize: "10px",
+                                                    opacity: 0.6,
                                                 }}
                                             >
                                                 {new Date(
@@ -337,8 +341,9 @@ const MyTickets = () => {
                             })}
                         </div>
 
+                        {/* Если тикет еще живой — я разрешаю тебе писать */}
                         {selectedTicket.status === "Открыт" ||
-                        selectedTicket.status === "open" ||
+                        selectedTicket.isActive ||
                         selectedTicket.is_active ? (
                             <form
                                 className="admin-chat-input-area"
@@ -350,7 +355,7 @@ const MyTickets = () => {
                             >
                                 <input
                                     type="text"
-                                    placeholder="Напиши ответ..."
+                                    placeholder="Твой ответ..."
                                     value={replyText}
                                     onChange={(e) =>
                                         setReplyText(e.target.value)
@@ -368,8 +373,7 @@ const MyTickets = () => {
                             </form>
                         ) : (
                             <div className="profile-ticket-closed-msg">
-                                Это обращение закрыто. Можешь больше не пытаться
-                                сюда писать.
+                                Тема закрыта. Я больше не хочу это обсуждать.
                             </div>
                         )}
                     </div>
