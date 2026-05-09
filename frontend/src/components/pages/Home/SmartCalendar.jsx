@@ -2,112 +2,99 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../../api/axios";
 
-const SmartCalendar = ({ nearestEvent, eventType, recommendedBouquets }) => {
+const MONTHS = [
+    "января",
+    "февраля",
+    "марта",
+    "апреля",
+    "мая",
+    "июня",
+    "июля",
+    "августа",
+    "сентября",
+    "октября",
+    "ноября",
+    "декабря",
+];
+
+const SmartCalendar = ({ closestEvent, recommendedBouquets, user }) => {
     const navigate = useNavigate();
 
+    // Если у нас вообще нет событий, я просто спрячу эту секцию.
+    if (!closestEvent) return null;
+
+    const [m, d] = closestEvent.eventDate.split("-");
+    const formattedDate = `${parseInt(d, 10)} ${MONTHS[parseInt(m, 10) - 1]}`;
+
     const handleAddToCart = async (e, bouquetId) => {
-        e.stopPropagation();
+        e.stopPropagation(); // Стой. Никаких переходов на другую страницу.
+        if (!user) {
+            alert(
+                "Сначала войди в систему, Лили. Я не позволю тебе делать покупки инкогнито.",
+            );
+            return navigate("/login");
+        }
         try {
             await api.post("/me/cart", { bouquetId, quantity: 1 });
-            alert("Букет жестко добавлен в корзину. Я доволен.");
+            alert("Молодец. Я положил этот букет в твою корзину.");
         } catch (error) {
-            alert("Сначала авторизуйся. Я не терплю анонимности.");
+            console.error(error);
+            alert(
+                "Что-то пошло не так. Не дергайся, я позже разберусь с этим.",
+            );
         }
     };
 
-    // Если нет событий, я выведу тебе ультиматум.
-    if (!nearestEvent) {
-        return (
-            <section className="smart-calendar-section">
-                <div className="calendar-header">
-                    <h2>Твой календарь девственно чист</h2>
-                    <p>
-                        Я не вижу дат, которые стоит помнить. Исправь это в
-                        профиле. А пока — выбери цветы просто так. Я разрешаю.
-                    </p>
-                </div>
-                <div className="calendar-carousel">
-                    {recommendedBouquets.map((bouquet) => (
+    return (
+        <section className="smart-calendar-section">
+            <div className="calendar-header">
+                <h2>
+                    Ближайший повод: {closestEvent.name} ({formattedDate})
+                </h2>
+                <p>Я подобрал это специально для тебя. Не разочаруй меня.</p>
+            </div>
+
+            <div className="calendar-carousel">
+                {recommendedBouquets.length > 0 ? (
+                    recommendedBouquets.map((bouquet) => (
                         <div
-                            onClick={() =>
-                                navigate(
-                                    `/b/${bouquet.bouquetId || bouquet.bouquet_id}`,
-                                )
-                            }
-                            key={bouquet.bouquetId || bouquet.bouquet_id}
+                            key={bouquet.bouquetId}
                             className="bouquet-card"
+                            onClick={() =>
+                                navigate(`/bouquet/${bouquet.bouquetId}`)
+                            }
+                            style={{ cursor: "pointer" }}
                         >
                             <img
                                 src={
-                                    bouquet.imageUrl || bouquet.image_url
-                                        ? `http://localhost:5000/uploads/${bouquet.imageUrl || bouquet.image_url}`
-                                        : "/default-bouquet.jpg"
+                                    bouquet.imageUrl ||
+                                    "https://i.pinimg.com/1200x/4c/fe/8f/4cfe8f22648e02856fabf623ce00334b.jpg"
                                 }
                                 alt={bouquet.name}
                             />
                             <h3>{bouquet.name}</h3>
-                            <p className="price">{bouquet.price} ₽</p>
+                            <p className="price">{bouquet.calculatedPrice} ₽</p>
                             <button
                                 onClick={(e) =>
-                                    handleAddToCart(
-                                        e,
-                                        bouquet.bouquetId || bouquet.bouquet_id,
-                                    )
+                                    handleAddToCart(e, bouquet.bouquetId)
                                 }
                             >
                                 В корзину
                             </button>
                         </div>
-                    ))}
-                </div>
-            </section>
-        );
-    }
-
-    return (
-        <section className="smart-calendar-section">
-            <div className="calendar-header">
-                <h2>Ближайший повод: {nearestEvent.name}</h2>
-                <p>
-                    Я подобрал это специально для{" "}
-                    {eventType ? eventType.name : "этого дня"}. Не разочаруй
-                    меня.
-                </p>
-            </div>
-
-            <div className="calendar-carousel">
-                {recommendedBouquets.map((bouquet) => (
-                    <div
-                        onClick={() =>
-                            navigate(
-                                `/b/${bouquet.bouquetId || bouquet.bouquet_id}`,
-                            )
-                        }
-                        key={bouquet.bouquetId || bouquet.bouquet_id}
-                        className="bouquet-card"
+                    ))
+                ) : (
+                    <p
+                        style={{
+                            textAlign: "center",
+                            width: "100%",
+                            color: "#aaa",
+                        }}
                     >
-                        <img
-                            src={
-                                bouquet.imageUrl || bouquet.image_url
-                                    ? `http://localhost:5000/uploads/${bouquet.imageUrl || bouquet.image_url}`
-                                    : "https://i.pinimg.com/1200x/4c/fe/8f/4cfe8f22648e02856fabf623ce00334b.jpg"
-                            }
-                            alt={bouquet.name}
-                        />
-                        <h3>{bouquet.name}</h3>
-                        <p className="price">{bouquet.price} ₽</p>
-                        <button
-                            onClick={(e) =>
-                                handleAddToCart(
-                                    e,
-                                    bouquet.bouquetId || bouquet.bouquet_id,
-                                )
-                            }
-                        >
-                            В корзину
-                        </button>
-                    </div>
-                ))}
+                        Я не нашел букетов для этого события. Мое упущение. Я
+                        исправлю каталог позже.
+                    </p>
+                )}
             </div>
         </section>
     );

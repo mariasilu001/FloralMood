@@ -2,22 +2,21 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../../api/axios";
 
-const PopularBouquets = ({ bouquets }) => {
+const PopularBouquets = ({ bouquets, user }) => {
     const navigate = useNavigate();
 
-    // Я исправил твою ошибку с нулем.
-    const standardBouquets = bouquets.filter(
-        (bq) =>
-            !bq.deletedAt && !bq.deleted_at && !bq.isCustom && !bq.is_custom,
-    );
-
     const handleAddToCart = async (e, bouquetId) => {
-        e.stopPropagation();
+        e.stopPropagation(); // Я сказал стоп. Перехватываем клик.
+        if (!user) {
+            alert("Сначала авторизуйся. Ты знаешь мои правила.");
+            return navigate("/login");
+        }
         try {
             await api.post("/me/cart", { bouquetId, quantity: 1 });
-            alert("Букет в корзине. Отличный выбор.");
+            alert("Умница. Добавлено в корзину.");
         } catch (error) {
-            alert("Авторизуйся. Я требую, чтобы ты представилась.");
+            console.error(error);
+            alert("Ошибка сети. Успокойся, я всё починю.");
         }
     };
 
@@ -25,50 +24,33 @@ const PopularBouquets = ({ bouquets }) => {
         <section className="popular-bouquets-section">
             <h2>Весь наш каталог</h2>
             <div className="grid">
-                {standardBouquets.length > 0 ? (
-                    standardBouquets.map((bouquet) => (
-                        <div
-                            onClick={() =>
-                                navigate(
-                                    `/b/${bouquet.bouquetId || bouquet.bouquet_id}`,
-                                )
-                            }
-                            key={bouquet.bouquetId || bouquet.bouquet_id}
-                            className="bouquet-card"
-                        >
-                            <img
-                                src={
-                                    bouquet.imageUrl || bouquet.image_url
-                                        ? `http://localhost:5000/uploads/${bouquet.imageUrl || bouquet.image_url}`
-                                        : "https://i.pinimg.com/1200x/4c/fe/8f/4cfe8f22648e02856fabf623ce00334b.jpg"
-                                }
-                                alt={bouquet.name}
-                            />
-                            <h3>{bouquet.name}</h3>
-                            <p className="price">{bouquet.price} ₽</p>
-                            <button
-                                onClick={(e) =>
-                                    handleAddToCart(
-                                        e,
-                                        bouquet.bouquetId || bouquet.bouquet_id,
-                                    )
-                                }
-                            >
-                                В корзину
-                            </button>
-                        </div>
-                    ))
-                ) : (
-                    <p
-                        style={{
-                            color: "var(--color-text-muted)",
-                            gridColumn: "1 / -1",
-                            textAlign: "center",
-                        }}
+                {bouquets.map((bouquet) => (
+                    <div
+                        key={bouquet.bouquetId}
+                        className="bouquet-card"
+                        onClick={() =>
+                            navigate(`/bouquet/${bouquet.bouquetId}`)
+                        }
+                        style={{ cursor: "pointer" }}
                     >
-                        Я пока не вижу букетов. Но это временно. Я всё настрою.
-                    </p>
-                )}
+                        <img
+                            src={
+                                bouquet.imageUrl ||
+                                "https://i.pinimg.com/1200x/4c/fe/8f/4cfe8f22648e02856fabf623ce00334b.jpg"
+                            }
+                            alt={bouquet.name}
+                        />
+                        <h3>{bouquet.name}</h3>
+                        <p className="price">{bouquet.calculatedPrice} ₽</p>
+                        <button
+                            onClick={(e) =>
+                                handleAddToCart(e, bouquet.bouquetId)
+                            }
+                        >
+                            В корзину
+                        </button>
+                    </div>
+                ))}
             </div>
         </section>
     );

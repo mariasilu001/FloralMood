@@ -103,22 +103,28 @@ const getAllBouquets = async (req, res, next) => {
                 userId: null,
                 deletedAt: null,
             },
-            include: {
-                model: models.Component,
-                as: "components",
-                include: {
-                    model: models.ComponentPrice,
-                    as: "prices",
-                    where: {
-                        startDate: {
-                            [Op.lte]: today,
-                        },
-                        endDate: {
-                            [Op.gte]: today,
+            include: [
+                {
+                    model: models.Component,
+                    as: "components",
+                    include: {
+                        model: models.ComponentPrice,
+                        as: "prices",
+                        where: {
+                            startDate: {
+                                [Op.lte]: today,
+                            },
+                            endDate: {
+                                [Op.gte]: today,
+                            },
                         },
                     },
                 },
-            },
+                {
+                    model: models.Tag,
+                    as: "tags",
+                },
+            ],
         });
 
         return res.json({
@@ -300,7 +306,12 @@ const getGlobalEvents = async (req, res, next) => {
 // Получить типы событий
 const getEventTypes = async (req, res, next) => {
     try {
-        const eventTypes = await models.EventType.findAll();
+        const eventTypes = await models.EventType.findAll({
+            include: {
+                model: models.Tag,
+                as: "tags",
+            },
+        });
         return res.json({ eventTypes });
     } catch (error) {
         next(error);

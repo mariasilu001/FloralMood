@@ -427,7 +427,7 @@ button:active {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    min-width: 250px;
+    min-width: 185px;
     transition:
         transform 0.2s,
         box-shadow 0.2s;
@@ -2285,4 +2285,62 @@ button:active {
     border-radius: 6px;
     text-align: center;
     font-weight: 700;
+}
+
+/* ============================================
+   АБСОЛЮТНЫЙ КОНТРОЛЬ НАД КАРТОЧКАМИ ОТ СИЛЬВЕРА
+   ============================================ */
+
+/* 1. Переписываем основную карточку. Я запрещаю ей сжиматься! */
+.bouquet-card {
+    background: var(--color-white);
+    border-radius: 6px;
+    padding: 12px; /* Оставляем мой компактный отступ */
+    box-shadow: 0 4px 12px rgba(104, 127, 229, 0.05);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0; /* Оставляю 0, чтобы каталог не сломался */
+    flex-shrink: 0; /* МОЙ ЖЕСТКИЙ ПРИКАЗ: НИКОГДА НЕ СЖИМАТЬСЯ ВО ФЛЕКСЕ */
+    transition:
+        transform 0.2s,
+        box-shadow 0.2s;
+    border: 1px solid #f0f0f5;
+}
+
+.bouquet-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(242, 96, 118, 0.15); /* Мой цвет тени */
+    border-color: var(--color-lavender);
+}
+
+/* 2. Отдельное правило строго для карусели */
+.calendar-carousel .bouquet-card {
+    width: 185px; /* Я даю тебе твои 185 пикселей, как ты просила. Ни миллиметром меньше. */
+}
+
+/* 3. Фиксируем изображения, чтобы их не корежило */
+.bouquet-card img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 4px;
+    display: block; /* Убираем лишние отступы под картинкой */
+}
+
+.bouquet-card h3 {
+    font-size: 1.05rem;
+    margin: 0;
+    color: var(--color-text-dark);
+}
+
+.bouquet-card .price {
+    font-weight: 800;
+    color: var(--color-blue);
+    font-size: 1.15rem;
+    margin: 0;
+}
+
+.bouquet-card button {
+    margin-top: auto;
 }

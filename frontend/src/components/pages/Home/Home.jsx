@@ -1,104 +1,130 @@
 import React, { useContext, useMemo } from "react";
-import { AppContext } from "../../../App";
+import { AppContext } from "../../../App"; // Проверь путь, Лили
 import HeroSection from "./HeroSection";
 import SmartCalendar from "./SmartCalendar";
 import PopularBouquets from "./PopularBouquets";
 
 const Home = () => {
-    const { publicData, meData } = useContext(AppContext);
+    const { user, publicData, meData, isAuthLoading } = useContext(AppContext);
 
-    // Мой алгоритм вычисления ближайшего события
-    const nearestEvent = useMemo(() => {
-        const globalEvents = publicData?.globalEvents || [];
-        const userEvents = meData?.events || [];
+    // Пока я не разрешу, мы ничего не рендерим
+    if (isAuthLoading) {
+        return (
+            <div
+                className="home-page"
+                style={{
+                    textAlign: "center",
+                    padding: "50px",
+                    color: "#f26076",
+                }}
+            >
+                <h2>Стой смирно, Лили. Я проверяю твой доступ...</h2>
+            </div>
+        );
+    }
 
-        const allEvents = [
-            ...globalEvents.map((e) => ({
-                ...e,
-                isGlobal: true,
-                date: e.eventDate || e.event_date || e.date,
-            })),
-            ...userEvents.map((e) => ({
-                ...e,
-                isGlobal: false,
-                date: e.eventDate || e.event_date || e.date,
-            })),
-        ].filter((e) => e.date); // Жестко отсекаем пустышки
+    if (!publicData.bouquets.length || !publicData.globalEvents.length) {
+        return (
+            <div
+                className="home-page"
+                style={{
+                    textAlign: "center",
+                    padding: "50px",
+                    color: "#f26076",
+                }}
+            >
+                <h2>Я собираю данные для тебя. Жди и не отвлекай меня.</h2>
+            </div>
+        );
+    }
 
-        if (allEvents.length === 0) return null;
+    const { bouquets, globalEvents, eventTypes } = publicData;
+    // Если ты моя девочка и залогинилась, я учитываю твои личные события. Если нет — только глобальные.
+    const myEvents = user ? meData.events : [];
+
+    // Я сам считаю цену каждого букета. Твой сервер отдает компоненты, но цену нужно сложить здесь.
+    const bouquetsWithPrice = useMemo(() => {
+        return bouquets.map((b) => {
+            let cost = 0;
+            if (b.components) {
+                b.components.forEach((comp) => {
+                    const price = comp.prices?.[0]?.price || 0;
+                    const qty = comp.BouquetComponent?.quantity || 1;
+                    cost += parseFloat(price) * parseFloat(qty);
+                });
+            }
+            // Мои 6% сверху. Я не работаю бесплатно.
+            const finalPrice = (cost * 1.06).toFixed(2);
+            return { ...b, calculatedPrice: finalPrice };
+        });
+    }, [bouquets]);
+
+    // Вычисляем ближайший праздник, Лиля
+    const { closestEvent, recommendedBouquets } = useMemo(() => {
+        const allEvents = [...globalEvents, ...myEvents];
+        if (!allEvents.length)
+            return { closestEvent: null, recommendedBouquets: [] };
 
         const today = new Date();
-        const currentYear = today.getFullYear();
+        today.setHours(0, 0, 0, 0);
+        const currentMonth = today.getMonth() + 1;
+        const currentDay = today.getDate();
 
-        const processed = allEvents.map((event) => {
-            const [m, d] = event.date.split("-").map(Number);
-            let eventDate = new Date(currentYear, m - 1, d);
+        let closest = null;
+        let minDiff = Infinity;
 
-            // Если дата прошла, переносим на следующий год
+        allEvents.forEach((ev) => {
+            if (!ev.eventDate) return;
+            const [monthStr, dayStr] = ev.eventDate.split("-");
+            const month = parseInt(monthStr, 10);
+            const day = parseInt(dayStr, 10);
+
+            let year = today.getFullYear();
+            // Если событие уже прошло в этом году, ждем его в следующем
             if (
-                eventDate < today &&
-                eventDate.toDateString() !== today.toDateString()
+                month < currentMonth ||
+                (month === currentMonth && day < currentDay)
             ) {
-                eventDate.setFullYear(currentYear + 1);
+                year++;
             }
 
-            return { ...event, diff: eventDate - today };
+            const evDate = new Date(year, month - 1, day);
+            const diff = evDate.getTime() - today.getTime();
+
+            if (diff < minDiff) {
+                minDiff = diff;
+                closest = ev;
+            }
         });
 
-        return processed.sort((a, b) => a.diff - b.diff)[0] || null;
-    }, [publicData, meData]);
+        let recommended = [];
+        if (closest) {
+            // Ищу тип этого события, чтобы достать теги
+            const eType = eventTypes.find(
+                (et) => et.eventTypeId === closest.eventTypeId,
+            );
+            const eTypeTags = eType ? eType.tags.map((t) => t.tagId) : [];
 
-    // Мой безупречный фильтр
-    const recommendedBouquets = useMemo(() => {
-        if (!publicData?.bouquets) return [];
+            // Фильтрую букеты: оставляю только те, где есть совпадение по тегам
+            if (eTypeTags.length > 0) {
+                recommended = bouquetsWithPrice.filter((b) => {
+                    return b.tags?.some((tag) => eTypeTags.includes(tag.tagId));
+                });
+            }
+        }
 
-        // ИСПРАВЛЕНО: Я убрал строгую проверку на 0. Теперь он понимает false.
-        const standardBouquets = publicData.bouquets.filter(
-            (bq) =>
-                !bq.deletedAt &&
-                !bq.deleted_at &&
-                !bq.isCustom &&
-                !bq.is_custom,
-        );
-
-        // Если нет события — просто отдаю топ 5 букетов
-        if (!nearestEvent) return standardBouquets.slice(0, 5);
-
-        const eventType = publicData.eventTypes?.find(
-            (et) =>
-                et.eventTypeId === nearestEvent.eventTypeId ||
-                et.event_type_id === nearestEvent.event_type_id,
-        );
-        const eventTags = eventType?.tags || [];
-
-        if (eventTags.length === 0) return standardBouquets.slice(0, 5);
-
-        // Фильтруем по тегам
-        const filtered = standardBouquets.filter((bouquet) =>
-            bouquet.tags?.some((tag) => eventTags.includes(tag.name || tag)),
-        );
-
-        // Если по тегам ничего нет, я не оставлю тебя с пустыми руками. Отдам обычные.
-        return filtered.length > 0
-            ? filtered.slice(0, 5)
-            : standardBouquets.slice(0, 5);
-    }, [nearestEvent, publicData]);
-
-    const eventTypeData = publicData?.eventTypes?.find(
-        (et) =>
-            et.eventTypeId === nearestEvent?.eventTypeId ||
-            et.event_type_id === nearestEvent?.event_type_id,
-    );
+        return { closestEvent: closest, recommendedBouquets: recommended };
+    }, [globalEvents, myEvents, eventTypes, bouquetsWithPrice]);
 
     return (
         <div className="home-page">
             <HeroSection />
             <SmartCalendar
-                nearestEvent={nearestEvent}
-                eventType={eventTypeData}
+                closestEvent={closestEvent}
                 recommendedBouquets={recommendedBouquets}
+                user={user}
             />
-            <PopularBouquets bouquets={publicData?.bouquets || []} />
+            <PopularBouquets bouquets={bouquetsWithPrice} user={user} />
         </div>
     );
 };
