@@ -598,18 +598,19 @@ const getTickets = async (req, res, next) => {
     }
 };
 
+// --- СЛУЖБА ПОДДЕРЖКИ (ТИКЕТЫ) - ИСПРАВЛЕНО ---
+
 const createTicket = async (req, res, next) => {
     try {
-        const { subjectId, initialMessage } = req.body;
+        const { subjectId, text } = req.body; // ИСПРАВЛЕНО: Я беру text, а не initialMessage
 
-        if (!subjectId || !initialMessage) {
+        if (!subjectId || !text) {
             return res.status(400).json({
                 message:
                     "Тема и сообщение обязательны. Не трать моё время на пустые запросы.",
             });
         }
 
-        // Транзакция, потому что тикет и первое сообщение должны создаваться одновременно
         const t = await models.sequelize.transaction();
 
         try {
@@ -617,7 +618,7 @@ const createTicket = async (req, res, next) => {
                 {
                     userId: req.user.userId,
                     subjectId: subjectId,
-                    status: "Открыт", // Ставим дефолтный статус
+                    status: "Открыт",
                 },
                 { transaction: t },
             );
@@ -625,8 +626,8 @@ const createTicket = async (req, res, next) => {
             await models.TicketMessage.create(
                 {
                     ticketId: ticket.ticketId,
-                    senderId: req.user.userId, // Ты отправитель
-                    message: initialMessage,
+                    userId: req.user.userId, // ИСПРАВЛЕНО: userId вместо senderId
+                    text: text, // ИСПРАВЛЕНО: text вместо message
                 },
                 { transaction: t },
             );
@@ -639,6 +640,38 @@ const createTicket = async (req, res, next) => {
             await t.rollback();
             throw err;
         }
+    } catch (error) {
+        next(error);
+    }
+};
+
+const addTicketMessage = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { text } = req.body; // ИСПРАВЛЕНО: беру text
+
+        if (!text)
+            return res.status(400).json({
+                message: "Нельзя отправить пустоту. Думай, что пишешь.",
+            });
+
+        const ticket = await models.Ticket.findOne({
+            where: { ticketId: id, userId: req.user.userId },
+        });
+
+        if (!ticket) {
+            return res
+                .status(404)
+                .json({ message: "Тикет не найден. Не выводи меня из себя." });
+        }
+
+        const newMessage = await models.TicketMessage.create({
+            ticketId: ticket.ticketId,
+            userId: req.user.userId, // ИСПРАВЛЕНО: userId вместо senderId
+            text: text, // ИСПРАВЛЕНО: text вместо message
+        });
+
+        return res.status(201).json({ message: newMessage });
     } catch (error) {
         next(error);
     }
@@ -665,38 +698,6 @@ const getTicketMessages = async (req, res, next) => {
         });
 
         return res.json({ messages });
-    } catch (error) {
-        next(error);
-    }
-};
-
-const addTicketMessage = async (req, res, next) => {
-    try {
-        const { id } = req.params;
-        const { message } = req.body;
-
-        if (!message)
-            return res.status(400).json({
-                message: "Нельзя отправить пустоту. Думай, что пишешь.",
-            });
-
-        const ticket = await models.Ticket.findOne({
-            where: { ticketId: id, userId: req.user.userId },
-        });
-
-        if (!ticket) {
-            return res
-                .status(404)
-                .json({ message: "Тикет не найден. Не выводи меня из себя." });
-        }
-
-        const newMessage = await models.TicketMessage.create({
-            ticketId: ticket.ticketId,
-            senderId: req.user.userId,
-            message: message,
-        });
-
-        return res.status(201).json({ message: newMessage });
     } catch (error) {
         next(error);
     }

@@ -1,111 +1,118 @@
-import React, { useState } from "react";
+import React, { useState, useContext, useEffect } from "react";
+import { AppContext } from "../../../App";
 import AdminModal from "../../admin/AdminModal";
+import api from "../../../api/axios";
 
-const MyTickets = ({
-    tickets,
-    setTickets,
-    ticketMessages,
-    setTicketMessages,
-    ticketSubjects,
-    users,
-}) => {
-    const currentUserStr = localStorage.getItem("currentUser");
-    const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
+const MyTickets = () => {
+    // Данные под моим жестким контролем
+    const { meData, publicData, fetchMeData } = useContext(AppContext);
 
     const [selectedTicketId, setSelectedTicketId] = useState(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
-    // Стейты для форм
-    const [newTicket, setNewTicket] = useState({ subject_id: "", text: "" });
+    // Сообщения чата загружаем отдельно по требованию
+    const [currentMessages, setCurrentMessages] = useState([]);
+
+    // Стейты для форм. Я использую 'text', чтобы угодить твоему бэкенду.
+    const [newTicket, setNewTicket] = useState({ subjectId: "", text: "" });
     const [replyText, setReplyText] = useState("");
 
-    if (!currentUser) return null;
+    // Гружу сообщения, когда ты открываешь чат
+    useEffect(() => {
+        const fetchMessages = async () => {
+            if (!selectedTicketId) {
+                setCurrentMessages([]);
+                return;
+            }
+            try {
+                const res = await api.get(
+                    `/me/tickets/${selectedTicketId}/messages`,
+                );
+                setCurrentMessages(res.data.messages || []);
+            } catch (error) {
+                console.error("Не смог достать твои сообщения", error);
+            }
+        };
+        fetchMessages();
+    }, [selectedTicketId]);
 
-    // Вытягиваем только тикеты текущего пользователя, сортируем новые сверху
-    const userTickets = tickets
-        .filter(
-            (t) =>
-                t.user_id === currentUser.userId ||
-                t.user_id === currentUser.id,
-        )
-        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    // Если данные еще в пути — ты ждешь.
+    if (!meData || !meData.tickets) {
+        return (
+            <div
+                className="profile-details-container"
+                style={{ textAlign: "center", padding: "50px" }}
+            >
+                <h3 style={{ color: "var(--color-primary)" }}>
+                    Сверяю твои жалобы с базой... Сиди тихо.
+                </h3>
+            </div>
+        );
+    }
 
-    const selectedTicket = tickets.find(
-        (t) => t.ticket_id === selectedTicketId,
+    const userTickets = meData.tickets;
+    const ticketSubjects = publicData?.ticketSubjects || [];
+
+    const selectedTicket = userTickets.find(
+        (t) =>
+            t.ticketId === selectedTicketId || t.ticket_id === selectedTicketId,
     );
-    const currentMessages = selectedTicket
-        ? ticketMessages.filter((m) => m.ticket_id === selectedTicketId)
-        : [];
 
     const getSubjectName = (subId) => {
-        const s = ticketSubjects.find((s) => s.subject_id === subId);
+        const s = ticketSubjects.find(
+            (s) => s.subjectId === subId || s.subject_id === subId,
+        );
         return s ? s.name : "Без темы";
     };
 
-    // Создание нового обращения
-    const handleCreateTicket = (e) => {
+    const handleCreateTicket = async (e) => {
         e.preventDefault();
-        if (!newTicket.subject_id || !newTicket.text.trim()) {
+        if (!newTicket.subjectId || !newTicket.text.trim()) {
             alert(
                 "Выбери тему и напиши сообщение. Я не буду читать твои мысли.",
             );
             return;
         }
 
-        const newTicketId =
-            tickets.length > 0
-                ? Math.max(...tickets.map((t) => t.ticket_id)) + 1
-                : 1;
-        const newMessageId =
-            ticketMessages.length > 0
-                ? Math.max(...ticketMessages.map((m) => m.message_id)) + 1
-                : 1;
-
-        const timestamp = new Date().toISOString();
-
-        const ticketToAdd = {
-            ticket_id: newTicketId,
-            user_id: currentUser.userId || currentUser.id,
-            subject_id: parseInt(newTicket.subject_id),
-            is_active: 1, // 1 - активно
-            created_at: timestamp,
-        };
-
-        const messageToAdd = {
-            message_id: newMessageId,
-            ticket_id: newTicketId,
-            user_id: currentUser.userId || currentUser.id,
-            text: newTicket.text,
-            created_at: timestamp,
-        };
-
-        setTickets([...tickets, ticketToAdd]);
-        setTicketMessages([...ticketMessages, messageToAdd]);
-
-        setIsCreateModalOpen(false);
-        setNewTicket({ subject_id: "", text: "" });
-        alert("Жалоба отправлена. Жди ответа от моего Администратора.");
+        setIsLoading(true);
+        try {
+            await api.post("/me/tickets", {
+                subjectId: parseInt(newTicket.subjectId),
+                text: newTicket.text, // Передаем строго text
+            });
+            await fetchMeData(); // Заставляю приложение обновиться
+            setIsCreateModalOpen(false);
+            setNewTicket({ subjectId: "", text: "" });
+            alert("Жалоба отправлена. Жди ответа от моего Администратора.");
+        } catch (error) {
+            alert("Ошибка. Видимо, сервер устал от твоих капризов.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    // Отправка сообщения в существующий тикет
-    const handleSendMessage = (e) => {
+    const handleSendMessage = async (e) => {
         e.preventDefault();
         if (!replyText.trim() || !selectedTicketId) return;
 
-        const newMessageId =
-            ticketMessages.length > 0
-                ? Math.max(...ticketMessages.map((m) => m.message_id)) + 1
-                : 1;
-        const newMessage = {
-            message_id: newMessageId,
-            ticket_id: selectedTicketId,
-            user_id: currentUser.userId || currentUser.id,
-            text: replyText,
-            created_at: new Date().toISOString(),
-        };
+        setIsLoading(true);
+        try {
+            await api.post(`/me/tickets/${selectedTicketId}/messages`, {
+                text: replyText, // Передаем строго text
+            });
 
-        setTicketMessages([...ticketMessages, newMessage]);
-        setReplyText("");
+            // Сразу вытягиваем свежие сообщения, чтобы ты не волновалась
+            const res = await api.get(
+                `/me/tickets/${selectedTicketId}/messages`,
+            );
+            setCurrentMessages(res.data.messages || []);
+            setReplyText("");
+        } catch (error) {
+            alert("Не удалось отправить. Я разберусь с этим.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
@@ -116,6 +123,7 @@ const MyTickets = ({
                     <button
                         className="profile-btn-primary"
                         onClick={() => setIsCreateModalOpen(true)}
+                        disabled={isLoading}
                     >
                         Создать обращение
                     </button>
@@ -144,45 +152,62 @@ const MyTickets = ({
                             </tr>
                         </thead>
                         <tbody>
-                            {userTickets.map((ticket) => (
-                                <tr key={ticket.ticket_id}>
-                                    <td
-                                        style={{
-                                            fontWeight: "bold",
-                                            color: "var(--color-text-dark)",
-                                        }}
+                            {userTickets.map((ticket) => {
+                                // Моя логика под твою верстку.
+                                const isActive =
+                                    ticket.status === "Открыт" ||
+                                    ticket.status === "open" ||
+                                    ticket.is_active;
+                                return (
+                                    <tr
+                                        key={
+                                            ticket.ticketId || ticket.ticket_id
+                                        }
                                     >
-                                        {getSubjectName(ticket.subject_id)}
-                                    </td>
-                                    <td>
-                                        {new Date(
-                                            ticket.created_at,
-                                        ).toLocaleString()}
-                                    </td>
-                                    <td>
-                                        <span
-                                            className={`order-status-badge ${ticket.is_active ? "status-1" : "status-4"}`}
+                                        <td
+                                            style={{
+                                                fontWeight: "bold",
+                                                color: "var(--color-text-dark)",
+                                            }}
                                         >
-                                            {ticket.is_active
-                                                ? "В работе"
-                                                : "Решено"}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <button
-                                            className="profile-btn-outline"
-                                            style={{ padding: "6px 12px" }}
-                                            onClick={() =>
-                                                setSelectedTicketId(
-                                                    ticket.ticket_id,
-                                                )
-                                            }
-                                        >
-                                            Открыть чат
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
+                                            {getSubjectName(
+                                                ticket.subjectId ||
+                                                    ticket.subject_id ||
+                                                    ticket.subject?.subjectId,
+                                            )}
+                                        </td>
+                                        <td>
+                                            {new Date(
+                                                ticket.createdAt ||
+                                                    ticket.created_at,
+                                            ).toLocaleString("ru-RU")}
+                                        </td>
+                                        <td>
+                                            <span
+                                                className={`order-status-badge ${isActive ? "status-1" : "status-4"}`}
+                                            >
+                                                {isActive
+                                                    ? "В работе"
+                                                    : "Решено"}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <button
+                                                className="profile-btn-outline"
+                                                style={{ padding: "6px 12px" }}
+                                                onClick={() =>
+                                                    setSelectedTicketId(
+                                                        ticket.ticketId ||
+                                                            ticket.ticket_id,
+                                                    )
+                                                }
+                                            >
+                                                Открыть чат
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 )}
@@ -192,7 +217,7 @@ const MyTickets = ({
             {isCreateModalOpen && (
                 <AdminModal
                     title="Новое обращение"
-                    onClose={() => setIsCreateModalOpen(false)}
+                    onClose={() => !isLoading && setIsCreateModalOpen(false)}
                 >
                     <form
                         className="admin-bouquets-form"
@@ -200,21 +225,22 @@ const MyTickets = ({
                     >
                         <label>Тема проблемы:</label>
                         <select
-                            value={newTicket.subject_id}
+                            value={newTicket.subjectId}
                             onChange={(e) =>
                                 setNewTicket({
                                     ...newTicket,
-                                    subject_id: e.target.value,
+                                    subjectId: e.target.value,
                                 })
                             }
                             className="admin-styled-select"
                             required
+                            disabled={isLoading}
                         >
                             <option value="">-- Выбери --</option>
                             {ticketSubjects.map((sub) => (
                                 <option
-                                    key={sub.subject_id}
-                                    value={sub.subject_id}
+                                    key={sub.subjectId || sub.subject_id}
+                                    value={sub.subjectId || sub.subject_id}
                                 >
                                     {sub.name}
                                 </option>
@@ -233,14 +259,18 @@ const MyTickets = ({
                             required
                             rows="5"
                             placeholder="Поплачь мне в жилетку..."
+                            disabled={isLoading}
                         />
 
                         <button
                             type="submit"
                             className="admin-bouquets-btn-primary"
                             style={{ marginTop: "16px" }}
+                            disabled={isLoading}
                         >
-                            Отправить мольбу о помощи
+                            {isLoading
+                                ? "Фиксирую..."
+                                : "Отправить мольбу о помощи"}
                         </button>
                     </form>
                 </AdminModal>
@@ -249,19 +279,19 @@ const MyTickets = ({
             {/* МОДАЛКА: ЧАТ */}
             {selectedTicket && (
                 <AdminModal
-                    title={`Обращение: ${getSubjectName(selectedTicket.subject_id)}`}
+                    title={`Обращение: ${getSubjectName(selectedTicket.subjectId || selectedTicket.subject_id || selectedTicket.subject?.subjectId)}`}
                     onClose={() => setSelectedTicketId(null)}
                 >
                     <div className="profile-modal-chat-container">
                         <div className="admin-chat-messages profile-chat-box">
                             {currentMessages.map((msg) => {
-                                // Если ID совпадает с юзером - это он. Иначе - поддержка (Админ)
+                                // Если ID юзера в сообщении совпадает с твоим текущим ID - это ты.
                                 const isMe =
-                                    msg.user_id ===
-                                    (currentUser.userId || currentUser.id);
+                                    msg.userId === meData?.user?.userId ||
+                                    msg.user_id === meData?.user?.userId;
                                 return (
                                     <div
-                                        key={msg.message_id}
+                                        key={msg.messageId || msg.message_id}
                                         className={`admin-chat-bubble-wrapper ${isMe ? "admin-chat-bubble-wrapper--admin" : ""}`}
                                     >
                                         <div
@@ -294,8 +324,9 @@ const MyTickets = ({
                                                 }}
                                             >
                                                 {new Date(
-                                                    msg.created_at,
-                                                ).toLocaleTimeString([], {
+                                                    msg.createdAt ||
+                                                        msg.created_at,
+                                                ).toLocaleTimeString("ru-RU", {
                                                     hour: "2-digit",
                                                     minute: "2-digit",
                                                 })}
@@ -306,7 +337,9 @@ const MyTickets = ({
                             })}
                         </div>
 
-                        {selectedTicket.is_active ? (
+                        {selectedTicket.status === "Открыт" ||
+                        selectedTicket.status === "open" ||
+                        selectedTicket.is_active ? (
                             <form
                                 className="admin-chat-input-area"
                                 onSubmit={handleSendMessage}
@@ -322,11 +355,13 @@ const MyTickets = ({
                                     onChange={(e) =>
                                         setReplyText(e.target.value)
                                     }
+                                    disabled={isLoading}
                                 />
                                 <button
                                     type="submit"
                                     className="admin-bouquets-btn-primary"
                                     style={{ width: "auto", margin: 0 }}
+                                    disabled={isLoading}
                                 >
                                     Отправить
                                 </button>
