@@ -8,7 +8,7 @@ const ProfileLayout = () => {
     const { user, setUser } = useContext(AppContext);
 
     // Этот предохранитель уже есть в App.jsx, но пусть будет, чтобы не было ошибок рендера
-    if (!user) return null; 
+    if (!user) return null;
 
     // Мой правильный загрузчик аватарок
     const handleAvatarChange = async (e) => {
@@ -24,14 +24,16 @@ const ProfileLayout = () => {
         try {
             // Отправляем файл на сервер
             const res = await api.put("/me", formData, {
-                headers: { "Content-Type": "multipart/form-data" }
+                headers: { "Content-Type": "multipart/form-data" },
             });
             // Обновляем контекст, чтобы новая картинка появилась везде
             setUser(res.data.user);
             alert("Аватар обновлен. Теперь ты выглядишь приемлемо.");
         } catch (error) {
             console.error(error);
-            alert("Ошибка загрузки. Файл слишком большой или это вообще не картинка.");
+            alert(
+                "Ошибка загрузки. Файл слишком большой или это вообще не картинка.",
+            );
         }
     };
 
@@ -39,7 +41,10 @@ const ProfileLayout = () => {
         <div className="profile-container">
             <aside className="profile-sidebar">
                 <div className="profile-user-badge">
-                    <label className="profile-avatar-wrapper" title="Изменить аватар">
+                    <label
+                        className="profile-avatar-wrapper"
+                        title="Изменить аватар"
+                    >
                         <input
                             type="file"
                             accept="image/*"
@@ -49,7 +54,10 @@ const ProfileLayout = () => {
                         <div className="profile-avatar">
                             {/* Картинка тянется из папки uploads моего сервера */}
                             {user.avatar ? (
-                                <img src={`/uploads/${user.avatar}`} alt="Аватар" />
+                                <img
+                                    src={`http://localhost:3000/uploads/${user.avatar}`}
+                                    alt="Аватар"
+                                />
                             ) : (
                                 user.username.charAt(0).toUpperCase()
                             )}
@@ -65,7 +73,9 @@ const ProfileLayout = () => {
                         to="/profile"
                         end
                         className={({ isActive }) =>
-                            isActive ? "profile-nav-link profile-nav-link--active" : "profile-nav-link"
+                            isActive
+                                ? "profile-nav-link profile-nav-link--active"
+                                : "profile-nav-link"
                         }
                     >
                         Личные данные
@@ -73,7 +83,9 @@ const ProfileLayout = () => {
                     <NavLink
                         to="/profile/custom-bouquets"
                         className={({ isActive }) =>
-                            isActive ? "profile-nav-link profile-nav-link--active" : "profile-nav-link"
+                            isActive
+                                ? "profile-nav-link profile-nav-link--active"
+                                : "profile-nav-link"
                         }
                     >
                         Мои кастомные букеты
@@ -81,7 +93,9 @@ const ProfileLayout = () => {
                     <NavLink
                         to="/profile/events"
                         className={({ isActive }) =>
-                            isActive ? "profile-nav-link profile-nav-link--active" : "profile-nav-link"
+                            isActive
+                                ? "profile-nav-link profile-nav-link--active"
+                                : "profile-nav-link"
                         }
                     >
                         Календарь событий
@@ -89,7 +103,9 @@ const ProfileLayout = () => {
                     <NavLink
                         to="/profile/orders"
                         className={({ isActive }) =>
-                            isActive ? "profile-nav-link profile-nav-link--active" : "profile-nav-link"
+                            isActive
+                                ? "profile-nav-link profile-nav-link--active"
+                                : "profile-nav-link"
                         }
                     >
                         История заказов
@@ -97,7 +113,9 @@ const ProfileLayout = () => {
                     <NavLink
                         to="/profile/favorites"
                         className={({ isActive }) =>
-                            isActive ? "profile-nav-link profile-nav-link--active" : "profile-nav-link"
+                            isActive
+                                ? "profile-nav-link profile-nav-link--active"
+                                : "profile-nav-link"
                         }
                     >
                         Избранное
@@ -105,7 +123,9 @@ const ProfileLayout = () => {
                     <NavLink
                         to="/profile/tickets"
                         className={({ isActive }) =>
-                            isActive ? "profile-nav-link profile-nav-link--active" : "profile-nav-link"
+                            isActive
+                                ? "profile-nav-link profile-nav-link--active"
+                                : "profile-nav-link"
                         }
                     >
                         Служба заботы

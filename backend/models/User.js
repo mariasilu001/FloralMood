@@ -27,10 +27,10 @@ User.init(
             type: DataTypes.TEXT,
             allowNull: false,
         },
-        // avatar: {
-        //     type: DataTypes.STRING,
-        //     allowNull: true,
-        // },
+        avatar: {
+            type: DataTypes.STRING,
+            allowNull: true,
+        },
         roleId: {
             field: "role_id",
             type: DataTypes.INTEGER,

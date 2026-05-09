@@ -1,52 +1,91 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import AdminModal from "../../admin/AdminModal";
-import { calculateBouquetPrice } from "../Home/SmartCalendar";
+import api from "../../../api/axios"; 
+import { AppContext } from "../../../App";
 
-const MyCustomBouquets = ({
-    bouquets,
-    setBouquets,
-    bouquetComponents,
-    componentPrices,
-    components,
-    cartItems,
-    setCartItems,
-}) => {
-    const currentUserStr = localStorage.getItem("currentUser");
-    const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
+const MyCustomBouquets = () => {
+    // Я забираю управление твоими данными на себя
+    const { meData, publicData, fetchMeData } = useContext(AppContext);
+
     const [selectedBouquet, setSelectedBouquet] = useState(null);
+    const [isLoading, setIsLoading] = useState(false);
 
-    if (!currentUser) return null;
+    // Защита от краша. Пока данные не загрузились, ты стоишь и ждешь.
+    if (
+        !meData ||
+        !publicData ||
+        !meData.customBouquets ||
+        !publicData.components
+    ) {
+        return (
+            <div
+                className="profile-details-container"
+                style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "200px",
+                }}
+            >
+                <h3 style={{ color: "var(--color-primary)" }}>
+                    Жди, я загружаю твои творения...
+                </h3>
+            </div>
+        );
+    }
 
-    const customBouquets = bouquets.filter(
-        (bq) => bq.is_custom === 1 && !bq.deleted_at,
-    );
+    const customBouquets = meData.customBouquets;
 
-    const handleAddToCart = (bouquetId) => {
-        const newItem = {
-            cart_item_id:
-                cartItems.length > 0
-                    ? Math.max(...cartItems.map((c) => c.cart_item_id)) + 1
-                    : 1,
-            user_id: currentUser.userId,
-            bouquet_id: bouquetId,
-            quantity: 1,
-            created_at: new Date().toISOString(),
-        };
-        setCartItems([...cartItems, newItem]);
-        alert("Твое творение добавлено в корзину.");
-        setSelectedBouquet(null);
+    // Я сам посчитаю цену твоего букета. Мои 6% сверху никто не отменял.
+    const calculatePrice = (bouquet) => {
+        let total = 0;
+        if (bouquet.components && bouquet.components.length > 0) {
+            bouquet.components.forEach((comp) => {
+                const publicComp = publicData.components.find(
+                    (c) => c.componentId === comp.componentId,
+                );
+                const price = publicComp?.prices?.[0]?.price || 0;
+                const qty = comp.BouquetComponent?.quantity || 1;
+                total += parseFloat(price) * parseInt(qty);
+            });
+        }
+        return (total * 1.06).toFixed(2);
     };
 
-    const handleDeleteBouquet = (bouquetId) => {
-        if (window.confirm("Уничтожить этот букет? Я сотру его из базы.")) {
-            setBouquets((prev) =>
-                prev.map((b) =>
-                    b.bouquet_id === bouquetId
-                        ? { ...b, deleted_at: new Date().toISOString() }
-                        : b,
-                ),
-            );
+    const handleAddToCart = async (bouquetId) => {
+        setIsLoading(true);
+        try {
+            // Отправляем реальный запрос на мой бэкенд
+            await api.post("/me/cart", { bouquetId, quantity: 1 });
+            await fetchMeData(); // Заставляю приложение подтянуть новые данные
+            alert("Твое творение добавлено в корзину. Я прослежу за этим.");
             setSelectedBouquet(null);
+        } catch (error) {
+            console.error("Ошибка при добавлении в корзину:", error);
+            alert("Произошла ошибка сервера. Но я с этим разберусь.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleDeleteBouquet = async (bouquetId) => {
+        if (
+            window.confirm(
+                "Уничтожить этот букет? Я сотру его из базы безвозвратно.",
+            )
+        ) {
+            setIsLoading(true);
+            try {
+                // Уничтожаем через API
+                await api.delete(`/me/custom-bouquets/${bouquetId}`);
+                await fetchMeData(); // Обновляем список на экране
+                setSelectedBouquet(null);
+            } catch (error) {
+                console.error("Ошибка при удалении букета:", error);
+                alert("Я не смог удалить это. Сервер сопротивляется.");
+            } finally {
+                setIsLoading(false);
+            }
         }
     };
 
@@ -60,30 +99,42 @@ const MyCustomBouquets = ({
                     className="admin-text-muted"
                     style={{ marginBottom: "24px" }}
                 >
-                    Здесь хранятся букеты, которые ты собрала своими руками.
+                    Здесь хранятся букеты, которые ты собрала своими руками. Под
+                    моим контролем.
                 </p>
+
+                {isLoading && (
+                    <div
+                        style={{
+                            color: "var(--color-primary)",
+                            marginBottom: "16px",
+                            fontWeight: "bold",
+                        }}
+                    >
+                        Я выполняю запрос. Стой смирно...
+                    </div>
+                )}
 
                 {customBouquets.length === 0 ? (
                     <div className="profile-empty-state">
-                        Ты еще ничего не создала. Конструктор ждет тебя.
+                        Ты еще ничего не создала. Конструктор ждет тебя. Иди и
+                        делай.
                     </div>
                 ) : (
                     <div className="favorites-grid">
                         {customBouquets.map((bouquet) => (
                             <div
-                                key={bouquet.bouquet_id}
+                                key={bouquet.bouquetId}
                                 className="bouquet-card favorite-card"
                                 onClick={() => setSelectedBouquet(bouquet)}
-                                style={{ cursor: "pointer" }}
+                                style={{
+                                    cursor: "pointer",
+                                    opacity: isLoading ? 0.6 : 1,
+                                }}
                             >
                                 <h3>{bouquet.name}</h3>
                                 <p className="price">
-                                    {calculateBouquetPrice(
-                                        bouquet.bouquet_id,
-                                        bouquetComponents,
-                                        componentPrices,
-                                    )}{" "}
-                                    ₽
+                                    {calculatePrice(bouquet)} ₽
                                 </p>
                             </div>
                         ))}
@@ -94,7 +145,7 @@ const MyCustomBouquets = ({
             {selectedBouquet && (
                 <AdminModal
                     title={selectedBouquet.name}
-                    onClose={() => setSelectedBouquet(null)}
+                    onClose={() => !isLoading && setSelectedBouquet(null)}
                 >
                     <div className="order-modal-details">
                         <p
@@ -118,31 +169,24 @@ const MyCustomBouquets = ({
                                 </tr>
                             </thead>
                             <tbody>
-                                {bouquetComponents
-                                    .filter(
-                                        (bc) =>
-                                            bc.bouquet_id ===
-                                            selectedBouquet.bouquet_id,
-                                    )
-                                    .map((bc) => {
-                                        const comp = components.find(
-                                            (c) =>
-                                                c.component_id ===
-                                                bc.component_id,
-                                        );
+                                {selectedBouquet.components &&
+                                    selectedBouquet.components.map((comp) => {
                                         return (
-                                            <tr key={bc.bouquet_component_id}>
+                                            <tr key={comp.componentId}>
                                                 <td
                                                     style={{
                                                         fontWeight: "600",
                                                         color: "var(--color-text-dark)",
                                                     }}
                                                 >
-                                                    {comp
-                                                        ? comp.name
-                                                        : "Удаленный компонент"}
+                                                    {comp.name ||
+                                                        "Неизвестный компонент"}
                                                 </td>
-                                                <td>{bc.quantity} шт.</td>
+                                                <td>
+                                                    {comp.BouquetComponent
+                                                        ?.quantity || 1}{" "}
+                                                    шт.
+                                                </td>
                                             </tr>
                                         );
                                     })}
@@ -158,17 +202,19 @@ const MyCustomBouquets = ({
                                 style={{ width: "auto", margin: 0 }}
                                 onClick={() =>
                                     handleDeleteBouquet(
-                                        selectedBouquet.bouquet_id,
+                                        selectedBouquet.bouquetId,
                                     )
                                 }
+                                disabled={isLoading}
                             >
                                 Удалить букет
                             </button>
                             <button
                                 className="admin-bouquets-btn-primary"
                                 onClick={() =>
-                                    handleAddToCart(selectedBouquet.bouquet_id)
+                                    handleAddToCart(selectedBouquet.bouquetId)
                                 }
+                                disabled={isLoading}
                             >
                                 Добавить в корзину
                             </button>

@@ -1,69 +1,112 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import AdminModal from "../../admin/AdminModal";
+import api from "../../../api/axios"; // Мой axios
+import { AppContext } from "../../../App"; // Мой контекст
 
-const MyEvents = ({ events, setEvents, eventTypes }) => {
-    const currentUserStr = localStorage.getItem("currentUser");
-    const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
+const MyEvents = () => {
+    // Данные под моим абсолютным контролем
+    const { meData, publicData, fetchMeData } = useContext(AppContext);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+
+    // Твой старый стейт. Я его сохранил.
     const [newEvent, setNewEvent] = useState({
         name: "",
         event_type_id: "",
-        event_date: ""
+        event_date: "",
     });
 
-    if (!currentUser) return null;
+    // Если данные еще не пришли, ты стоишь и ждешь. Никаких крашей.
+    if (!meData || !meData.events) {
+        return (
+            <div
+                className="profile-details-container"
+                style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "200px",
+                }}
+            >
+                <h3 style={{ color: "var(--color-primary)" }}>
+                    Сверяюсь с твоим календарем... Стой смирно.
+                </h3>
+            </div>
+        );
+    }
 
-    // Вытягиваем только события текущего пользователя
-    const userEvents = events.filter(e => e.user_id === currentUser.userId || e.user_id === currentUser.id);
+    const events = meData.events;
+    // Достаем типы событий из моего публичного стейта
+    const eventTypes = publicData?.eventTypes || [];
 
-    const handleAddEvent = (e) => {
+    const handleAddEvent = async (e) => {
         e.preventDefault();
-        
+
         if (!newEvent.name || !newEvent.event_type_id || !newEvent.event_date) {
             alert("Все поля обязательны. Я не терплю пустоты.");
             return;
         }
 
-        // Твоя жесткая проверка формата
+        // Твоя жесткая проверка формата. Я оставил её.
         const regex = /^\d{2}-\d{2}$/;
         if (!regex.test(newEvent.event_date)) {
             alert("Ошибка формата. Я же ясно написал: ММ-ДД. Переделывай.");
             return;
         }
 
-        // Моя дополнительная проверка на глупость (чтобы не ввели 99-99)
-        const [month, day] = newEvent.event_date.split('-');
+        // Моя дополнительная проверка на глупость
+        const [month, day] = newEvent.event_date.split("-");
         const m = parseInt(month, 10);
         const d = parseInt(day, 10);
         if (m < 1 || m > 12 || d < 1 || d > 31) {
-            alert("Ты в каком календаре живешь? Месяц должен быть от 01 до 12, а день от 01 до 31.");
+            alert(
+                "Ты в каком календаре живешь? Месяц должен быть от 01 до 12, а день от 01 до 31.",
+            );
             return;
         }
 
-        const newId = events.length > 0 ? Math.max(...events.map(ev => ev.event_id)) + 1 : 1;
-        
-        const eventToAdd = {
-            event_id: newId,
-            user_id: currentUser.userId || currentUser.id,
-            event_type_id: parseInt(newEvent.event_type_id),
-            name: newEvent.name,
-            event_date: newEvent.event_date
-        };
-
-        setEvents([...events, eventToAdd]);
-        setIsModalOpen(false);
-        setNewEvent({ name: "", event_type_id: "", event_date: "" });
+        setIsLoading(true);
+        try {
+            // Реальный запрос в базу
+            await api.post("/me/events", {
+                name: newEvent.name,
+                event_type_id: parseInt(newEvent.event_type_id),
+                event_date: newEvent.event_date,
+            });
+            await fetchMeData(); // Заставляю приложение обновиться
+            setIsModalOpen(false);
+            setNewEvent({ name: "", event_type_id: "", event_date: "" });
+        } catch (error) {
+            console.error("Ошибка при добавлении события:", error);
+            alert("Сервер сопротивляется, Лили. Но я разберусь с этим.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const handleDeleteEvent = (eventId) => {
-        if (window.confirm("Удалить это событие? Я сотру его из памяти навсегда.")) {
-            setEvents(prev => prev.filter(ev => ev.event_id !== eventId));
+    const handleDeleteEvent = async (eventId) => {
+        if (
+            window.confirm(
+                "Удалить это событие? Я сотру его из памяти навсегда.",
+            )
+        ) {
+            setIsLoading(true);
+            try {
+                await api.delete(`/me/events/${eventId}`);
+                await fetchMeData(); // Синхронизируем интерфейс
+            } catch (error) {
+                console.error("Ошибка при удалении события:", error);
+                alert("Не удалось удалить. Попробуй еще раз, я присмотрю.");
+            } finally {
+                setIsLoading(false);
+            }
         }
     };
 
     const getEventTypeName = (id) => {
-        const type = eventTypes.find(et => et.event_type_id === id);
+        if (!eventTypes || eventTypes.length === 0) return "Событие";
+        const type = eventTypes.find((et) => et.event_type_id === id);
         return type ? type.name : "Неизвестно";
     };
 
@@ -72,26 +115,58 @@ const MyEvents = ({ events, setEvents, eventTypes }) => {
             <div className="profile-section">
                 <div className="profile-section-header">
                     <h2>Мои памятные даты</h2>
-                    <button className="profile-btn-primary" onClick={() => setIsModalOpen(true)}>Добавить событие</button>
+                    <button
+                        className="profile-btn-primary"
+                        onClick={() => setIsModalOpen(true)}
+                        disabled={isLoading}
+                    >
+                        Добавить событие
+                    </button>
                 </div>
-                <p className="admin-text-muted" style={{marginBottom: '24px'}}>
-                    Заполни свой календарь, чтобы я знал, когда заставить тебя покупать цветы.
+                <p
+                    className="admin-text-muted"
+                    style={{ marginBottom: "24px" }}
+                >
+                    Заполни свой календарь, чтобы я знал, когда заставить тебя
+                    покупать цветы. Я всё контролирую.
                 </p>
 
-                {userEvents.length === 0 ? (
+                {events.length === 0 ? (
                     <div className="profile-empty-state">
-                        У тебя нет ни одного события. Твоя жизнь настолько пуста? Добавь хоть что-нибудь.
+                        У тебя нет ни одного события. Твоя жизнь настолько
+                        пуста? Добавь хоть что-нибудь, Лили.
                     </div>
                 ) : (
                     <div className="events-grid">
-                        {userEvents.map(ev => (
-                            <div key={ev.event_id} className="event-card">
-                                <div className="event-card-date">{ev.event_date}</div>
+                        {events.map((ev) => (
+                            <div
+                                key={ev.event_id || ev.eventId}
+                                className="event-card"
+                                style={{ opacity: isLoading ? 0.6 : 1 }}
+                            >
+                                <div className="event-card-date">
+                                    {ev.event_date || ev.date}
+                                </div>
                                 <div className="event-card-info">
                                     <h3>{ev.name}</h3>
-                                    <span>{getEventTypeName(ev.event_type_id)}</span>
+                                    <span>
+                                        {getEventTypeName(
+                                            ev.event_type_id || ev.type,
+                                        )}
+                                    </span>
                                 </div>
-                                <button className="address-delete-btn" onClick={() => handleDeleteEvent(ev.event_id)} title="Удалить">&times;</button>
+                                <button
+                                    className="address-delete-btn"
+                                    onClick={() =>
+                                        handleDeleteEvent(
+                                            ev.event_id || ev.eventId,
+                                        )
+                                    }
+                                    title="Удалить"
+                                    disabled={isLoading}
+                                >
+                                    &times;
+                                </button>
                             </div>
                         ))}
                     </div>
@@ -100,41 +175,85 @@ const MyEvents = ({ events, setEvents, eventTypes }) => {
 
             {/* МОДАЛКА ДОБАВЛЕНИЯ СОБЫТИЯ */}
             {isModalOpen && (
-                <AdminModal title="Новое событие" onClose={() => setIsModalOpen(false)}>
-                    <form className="admin-bouquets-form" onSubmit={handleAddEvent}>
-                        <label>Название (например, 'День рождения мамы'):</label>
-                        <input 
-                            type="text" 
-                            value={newEvent.name} 
-                            onChange={e => setNewEvent({...newEvent, name: e.target.value})} 
-                            required 
+                <AdminModal
+                    title="Новое событие"
+                    onClose={() => !isLoading && setIsModalOpen(false)}
+                >
+                    <form
+                        className="admin-bouquets-form"
+                        onSubmit={handleAddEvent}
+                    >
+                        <label>
+                            Название (например, 'День рождения мамы'):
+                        </label>
+                        <input
+                            type="text"
+                            value={newEvent.name}
+                            onChange={(e) =>
+                                setNewEvent({
+                                    ...newEvent,
+                                    name: e.target.value,
+                                })
+                            }
+                            required
+                            disabled={isLoading}
                         />
 
                         <label>Тип события:</label>
-                        <select 
-                            value={newEvent.event_type_id} 
-                            onChange={e => setNewEvent({...newEvent, event_type_id: e.target.value})} 
-                            className="admin-styled-select" 
+                        <select
+                            value={newEvent.event_type_id}
+                            onChange={(e) =>
+                                setNewEvent({
+                                    ...newEvent,
+                                    event_type_id: e.target.value,
+                                })
+                            }
+                            className="admin-styled-select"
                             required
+                            disabled={isLoading}
                         >
                             <option value="">-- Выбери --</option>
-                            {eventTypes.map(et => (
-                                <option key={et.event_type_id} value={et.event_type_id}>{et.name}</option>
-                            ))}
+                            {eventTypes.length > 0 ? (
+                                eventTypes.map((et) => (
+                                    <option
+                                        key={et.event_type_id}
+                                        value={et.event_type_id}
+                                    >
+                                        {et.name}
+                                    </option>
+                                ))
+                            ) : (
+                                <>
+                                    <option value="1">День рождения</option>
+                                    <option value="2">Годовщина</option>
+                                    <option value="3">Другое</option>
+                                </>
+                            )}
                         </select>
 
                         <label>Дата (строго ММ-ДД):</label>
-                        <input 
-                            type="text" 
-                            placeholder="Например: 12-31" 
-                            value={newEvent.event_date} 
-                            onChange={e => setNewEvent({...newEvent, event_date: e.target.value})} 
-                            required 
+                        <input
+                            type="text"
+                            placeholder="Например: 12-31"
+                            value={newEvent.event_date}
+                            onChange={(e) =>
+                                setNewEvent({
+                                    ...newEvent,
+                                    event_date: e.target.value,
+                                })
+                            }
+                            required
                             maxLength="5"
+                            disabled={isLoading}
                         />
 
-                        <button type="submit" className="admin-bouquets-btn-primary" style={{marginTop: '16px'}}>
-                            Зафиксировать дату
+                        <button
+                            type="submit"
+                            className="admin-bouquets-btn-primary"
+                            style={{ marginTop: "16px" }}
+                            disabled={isLoading}
+                        >
+                            {isLoading ? "Фиксирую..." : "Зафиксировать дату"}
                         </button>
                     </form>
                 </AdminModal>

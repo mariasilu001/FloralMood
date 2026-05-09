@@ -297,30 +297,28 @@ const App = () => {
                     element={!user ? <Register /> : <Navigate to="/profile" />}
                 />*/}
 
- 
-               <Route path="/" element={<MainLayout />}>
-                     {/*<Route index element={<Home />} />
+                <Route path="/" element={<MainLayout />}>
+                    {/*<Route index element={<Home />} />
                     <Route path="customizer" element={<Customizer />} />
                     <Route path="cart" element={<Cart />} />
                     <Route path="bouquet/:id" element={<BouquetDetails />} />>*/}
-                
 
-                <Route
-                    path="/profile"
-                    element={
-                        user ? <ProfileLayout /> : <Navigate to="/login" />
-                    }
-                >
-                    <Route index element={<PersonalDetails />} />
-                    {/*<Route path="orders" element={<OrderHistory />} />
-                    <Route path="tickets" element={<MyTickets />} />
-                    <Route path="favorites" element={<MyFavorites />} />
-                    <Route path="events" element={<MyEvents />} />
                     <Route
-                        path="custom-bouquets"
-                        element={<MyCustomBouquets />}
-                    />*/}
-                </Route>
+                        path="/profile"
+                        element={
+                            user ? <ProfileLayout /> : <Navigate to="/login" />
+                        }
+                    >
+                        <Route index element={<PersonalDetails />} />
+                        {/*<Route path="orders" element={<OrderHistory />} />
+                    <Route path="tickets" element={<MyTickets />} />
+                    <Route path="favorites" element={<MyFavorites />} />*/}
+                        <Route path="events" element={<MyEvents />} />
+                        <Route
+                            path="custom-bouquets"
+                            element={<MyCustomBouquets />}
+                        />
+                    </Route>
                 </Route>
 
                 {/*<Route
