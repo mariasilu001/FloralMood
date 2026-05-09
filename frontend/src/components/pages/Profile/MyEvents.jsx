@@ -146,7 +146,7 @@ const MyEvents = () => {
                                 style={{ opacity: isLoading ? 0.6 : 1 }}
                             >
                                 <div className="event-card-date">
-                                    {ev.event_date || ev.date}
+                                    {ev.eventDate}
                                 </div>
                                 <div className="event-card-info">
                                     <h3>{ev.name}</h3>

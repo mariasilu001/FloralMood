@@ -298,8 +298,8 @@ const App = () => {
                 />*/}
 
                 <Route path="/" element={<MainLayout />}>
-                    {/*<Route index element={<Home />} />
-                    <Route path="customizer" element={<Customizer />} />
+                    <Route index element={<Home />} />
+                    {/* <Route path="customizer" element={<Customizer />} />
                     <Route path="cart" element={<Cart />} />
                     <Route path="bouquet/:id" element={<BouquetDetails />} />>*/}
 
@@ -310,9 +310,9 @@ const App = () => {
                         }
                     >
                         <Route index element={<PersonalDetails />} />
-                        {/*<Route path="orders" element={<OrderHistory />} />
-                    <Route path="tickets" element={<MyTickets />} />
-                    <Route path="favorites" element={<MyFavorites />} />*/}
+                        <Route path="orders" element={<OrderHistory />} />
+                        <Route path="tickets" element={<MyTickets />} />
+                        <Route path="favorites" element={<MyFavorites />} />
                         <Route path="events" element={<MyEvents />} />
                         <Route
                             path="custom-bouquets"

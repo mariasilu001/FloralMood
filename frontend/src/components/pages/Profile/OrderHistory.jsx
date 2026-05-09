@@ -1,51 +1,35 @@
-import React, { useState } from "react";
-import AdminModal from "../../admin/AdminModal";
+import React, { useState, useContext } from "react";
+import { AppContext } from "../../../App"; // Твой священный контекст
+import AdminModal from "../../admin/AdminModal"; // Используем твою модалку
 
-const OrderHistory = ({
-    orders,
-    orderItems,
-    bouquets,
-    orderStatuses,
-    deliverTimeSlots = [],
-}) => {
-    const currentUserStr = localStorage.getItem("currentUser");
-    const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
+const OrderHistory = () => {
+    // Я забираю данные, которые ты так заботливо подготовила
+    const { meData } = useContext(AppContext);
 
-    const [selectedOrderId, setSelectedOrderId] = useState(null);
+    // Состояние для модалки деталей заказа
+    const [selectedOrder, setSelectedOrder] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
-    if (!currentUser) return null;
+    // Если данные еще в пути — ты ждешь.
+    if (!meData || !meData.orders) {
+        return (
+            <div
+                className="profile-details-container"
+                style={{ textAlign: "center", padding: "50px" }}
+            >
+                <h3 style={{ color: "var(--color-primary)" }}>
+                    Ищу твои чеки в архивах... Не смей прерывать меня.
+                </h3>
+            </div>
+        );
+    }
 
-    // Вытягиваем только заказы текущего пользователя и сортируем: новые сверху
-    const userOrders = orders
-        .filter(
-            (o) =>
-                o.user_id === currentUser.userId ||
-                o.user_id === currentUser.id,
-        )
-        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const orders = meData.orders;
 
-    // Выбранный заказ для модалки
-    const selectedOrder = userOrders.find(
-        (o) => o.order_id === selectedOrderId,
-    );
-    const currentOrderItems = selectedOrder
-        ? orderItems.filter((item) => item.order_id === selectedOrder.order_id)
-        : [];
-
-    const getStatusInfo = (statusId) => {
-        const status = orderStatuses.find((s) => s.status_id === statusId);
-        return status ? status.name : "Неизвестно";
-    };
-
-    const getOrderTotalItems = (orderId) => {
-        const items = orderItems.filter((item) => item.order_id === orderId);
-        return items.reduce((sum, current) => sum + current.quantity, 0);
-    };
-
-    const getTimeSlotInfo = (slotId) => {
-        const slot = deliverTimeSlots.find((s) => s.time_slot_id === slotId);
-        if (!slot) return "";
-        return ` (${slot.name}: с ${slot.start_time.substring(0, 5)} до ${slot.end_time.substring(0, 5)})`;
+    // Функция открытия деталей. Я сам решу, что тебе показывать.
+    const handleViewDetails = (order) => {
+        setSelectedOrder(order);
+        setIsModalOpen(true);
     };
 
     return (
@@ -58,73 +42,59 @@ const OrderHistory = ({
                     className="admin-text-muted"
                     style={{ marginBottom: "24px" }}
                 >
-                    Здесь хранится история всех твоих покупок. Я ничего не
-                    забываю.
+                    Я помню каждый цветок, который ты купила. Твои заказы — под
+                    моим надзором.
                 </p>
 
-                {userOrders.length === 0 ? (
+                {orders.length === 0 ? (
                     <div className="profile-empty-state">
-                        Ты еще ничего не заказала. Чего ты ждешь? Иди и выбери
-                        букет.
+                        Тут пусто, Лиля. Твоя история еще не написана. Иди в
+                        каталог.
                     </div>
                 ) : (
-                    <div className="order-history-list">
-                        {userOrders.map((order) => (
-                            <div
-                                key={order.order_id}
-                                className="order-card"
-                                onClick={() =>
-                                    setSelectedOrderId(order.order_id)
-                                }
-                            >
+                    <div className="orders-list">
+                        {orders.map((order) => (
+                            <div key={order.orderId} className="order-card">
                                 <div className="order-card-header">
-                                    <span className="order-number">
-                                        Заказ #{order.order_id}
-                                    </span>
-                                    <span className="order-date">
-                                        {new Date(
-                                            order.created_at,
-                                        ).toLocaleDateString()}{" "}
-                                        в{" "}
-                                        {new Date(
-                                            order.created_at,
-                                        ).toLocaleTimeString([], {
-                                            hour: "2-digit",
-                                            minute: "2-digit",
-                                        })}
-                                    </span>
-                                </div>
-                                <div className="order-card-body">
-                                    <div className="order-info-column">
-                                        <span className="order-label">
-                                            Статус:
-                                        </span>
-                                        <span
-                                            className={`order-status-badge status-${order.status_id}`}
-                                        >
-                                            {getStatusInfo(order.status_id)}
-                                        </span>
-                                    </div>
-                                    <div className="order-info-column">
-                                        <span className="order-label">
-                                            Позиций:
-                                        </span>
-                                        <span className="order-value">
-                                            {getOrderTotalItems(order.order_id)}{" "}
-                                            шт.
+                                    <div className="order-main-info">
+                                        <h3>Заказ №{order.orderId}</h3>
+                                        <span className="order-date">
+                                            {new Date(
+                                                order.createdAt,
+                                            ).toLocaleDateString("ru-RU")}
                                         </span>
                                     </div>
                                     <div
-                                        className="order-info-column"
-                                        style={{ textAlign: "right" }}
+                                        className="order-status-badge"
+                                        style={{
+                                            backgroundColor:
+                                                "var(--color-primary)",
+                                            color: "#fff",
+                                            padding: "4px 12px",
+                                            borderRadius: "20px",
+                                            fontSize: "14px",
+                                        }}
                                     >
-                                        <span className="order-label">
-                                            Сумма:
-                                        </span>
-                                        <span className="order-value order-total">
-                                            {order.total_price} ₽
-                                        </span>
+                                        {/* Статус из базы */}
+                                        {order.status?.name || "В обработке"}
                                     </div>
+                                </div>
+
+                                <div className="order-card-footer">
+                                    <div className="order-total-price">
+                                        Сумма:{" "}
+                                        <strong>{order.totalPrice} ₽</strong>
+                                    </div>
+                                    <button
+                                        className="profile-btn-primary"
+                                        onClick={() => handleViewDetails(order)}
+                                        style={{
+                                            padding: "8px 16px",
+                                            fontSize: "13px",
+                                        }}
+                                    >
+                                        Детали заказа
+                                    </button>
                                 </div>
                             </div>
                         ))}
@@ -132,122 +102,97 @@ const OrderHistory = ({
                 )}
             </div>
 
-            {/* МОДАЛКА: Детали заказа */}
-            {selectedOrder && (
+            {/* ТВОЯ МОДАЛКА. Я вернул её, как ты и просила. */}
+            {isModalOpen && selectedOrder && (
                 <AdminModal
-                    title={`Заказ #${selectedOrder.order_id}`}
-                    onClose={() => setSelectedOrderId(null)}
+                    title={`Детали заказа №${selectedOrder.orderId}`}
+                    onClose={() => setIsModalOpen(false)}
                 >
-                    <div className="order-modal-details">
-                        <div className="order-modal-info-grid">
-                            <div>
-                                <span className="admin-text-muted">
-                                    Дата оформления:
-                                </span>
-                                <strong>
-                                    {new Date(
-                                        selectedOrder.created_at,
-                                    ).toLocaleString()}
-                                </strong>
-                            </div>
-                            <div>
-                                <span className="admin-text-muted">
-                                    Статус:
-                                </span>
-                                <strong
-                                    className={`order-status-badge status-${selectedOrder.status_id}`}
-                                    style={{
-                                        display: "inline-block",
-                                        marginTop: "4px",
-                                    }}
-                                >
-                                    {getStatusInfo(selectedOrder.status_id)}
-                                </strong>
-                            </div>
-                            <div>
-                                <span className="admin-text-muted">
-                                    Дата и время доставки:
-                                </span>
-                                <strong>
-                                    {selectedOrder.delivery_date}
-                                    {getTimeSlotInfo(
-                                        selectedOrder.time_slot_id,
-                                    )}
-                                </strong>
-                            </div>
-                            <div>
-                                <span className="admin-text-muted">
-                                    Итоговая сумма:
-                                </span>
-                                <strong
-                                    className="order-total"
-                                    style={{ fontSize: "1.2rem" }}
-                                >
-                                    {selectedOrder.total_price} ₽
-                                </strong>
-                            </div>
+                    <div className="order-details-modal-content">
+                        <div style={{ marginBottom: "20px" }}>
+                            <strong>Дата заказа:</strong>{" "}
+                            {new Date(selectedOrder.createdAt).toLocaleString(
+                                "ru-RU",
+                            )}
                         </div>
 
-                        <h3 className="admin-subsection-title">
-                            Состав заказа:
-                        </h3>
-                        <table className="admin-bouquets-table">
-                            <thead>
-                                <tr>
-                                    <th>Фото</th>
-                                    <th>Название</th>
-                                    <th>Цена за шт.</th>
-                                    <th>Кол-во</th>
-                                    <th>Сумма</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {currentOrderItems.map((item) => {
-                                    const bouquet = bouquets.find(
-                                        (b) => b.bouquet_id === item.bouquet_id,
-                                    );
-                                    return (
-                                        <tr key={item.order_item_id}>
-                                            <td>
-                                                <img
-                                                    src={
-                                                        bouquet?.image_url ||
-                                                        "https://via.placeholder.com/60"
-                                                    }
-                                                    alt={
-                                                        bouquet?.name ||
-                                                        "Удаленный букет"
-                                                    }
-                                                    className="admin-bouquets-preview"
-                                                />
-                                            </td>
-                                            <td
-                                                style={{
-                                                    fontWeight: "600",
-                                                    color: "var(--color-text-dark)",
-                                                }}
-                                            >
-                                                {bouquet
-                                                    ? bouquet.name
-                                                    : "Букет удален из базы"}
-                                            </td>
-                                            <td>{item.price_snapshot} ₽</td>
-                                            <td>{item.quantity} шт.</td>
-                                            <td
-                                                style={{
-                                                    fontWeight: "bold",
-                                                    color: "var(--color-blue)",
-                                                }}
-                                            >
-                                                {item.price_snapshot *
-                                                    item.quantity}{" "}
-                                                ₽
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
+                        <div
+                            className="order-items-list"
+                            style={{ marginBottom: "20px" }}
+                        >
+                            <h4
+                                style={{
+                                    marginBottom: "10px",
+                                    color: "var(--color-primary)",
+                                }}
+                            >
+                                Состав букета:
+                            </h4>
+                            {selectedOrder.items &&
+                                selectedOrder.items.map((item) => (
+                                    <div
+                                        key={item.orderItemId}
+                                        className="order-item-row"
+                                        style={{
+                                            display: "flex",
+                                            justifyContent: "space-between",
+                                            padding: "8px 0",
+                                            borderBottom: "1px solid #eee",
+                                        }}
+                                    >
+                                        <span>
+                                            {item.bouquet?.name ||
+                                                "Кастомный букет"}{" "}
+                                            x{item.quantity}
+                                        </span>
+                                        <span>
+                                            {(
+                                                item.priceSnapshot *
+                                                item.quantity
+                                            ).toFixed(2)}{" "}
+                                            ₽
+                                        </span>
+                                    </div>
+                                ))}
+                        </div>
+
+                        <div
+                            className="order-delivery-info"
+                            style={{
+                                backgroundColor: "#f9f9f9",
+                                padding: "15px",
+                                borderRadius: "8px",
+                            }}
+                        >
+                            <p>
+                                <strong>Адрес доставки:</strong>{" "}
+                                {selectedOrder.deliveryAddress?.city},{" "}
+                                {selectedOrder.deliveryAddress?.street}, д.{" "}
+                                {selectedOrder.deliveryAddress?.house}
+                            </p>
+                            <p>
+                                <strong>Дата доставки:</strong>{" "}
+                                {new Date(
+                                    selectedOrder.deliveryDate,
+                                ).toLocaleDateString("ru-RU")}
+                            </p>
+                            {selectedOrder.comment && (
+                                <p>
+                                    <strong>Комментарий:</strong>{" "}
+                                    {selectedOrder.comment}
+                                </p>
+                            )}
+                        </div>
+
+                        <div
+                            style={{
+                                marginTop: "20px",
+                                textAlign: "right",
+                                fontSize: "18px",
+                            }}
+                        >
+                            <strong>Итого: {selectedOrder.totalPrice} ₽</strong>
+                        </div>
                     </div>
                 </AdminModal>
             )}

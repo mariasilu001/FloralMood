@@ -2,7 +2,27 @@ import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../../styles/Cart.css";
 import AdminModal from "../../admin/AdminModal";
-import { calculateBouquetPrice } from "../Home/SmartCalendar";
+
+const calculateBouquetPrice = (
+    bouquetId,
+    bouquetComponents,
+    componentPrices,
+) => {
+    const componentsInBouquet = bouquetComponents.filter(
+        (bc) => bc.bouquet_id === bouquetId,
+    );
+    let total = 0;
+
+    componentsInBouquet.forEach((bc) => {
+        const priceObj = componentPrices.find(
+            (cp) => cp.component_id === bc.component_id,
+        );
+        if (priceObj) {
+            total += priceObj.price * bc.quantity;
+        }
+    });
+    return total;
+};
 
 const Cart = ({
     cartItems,

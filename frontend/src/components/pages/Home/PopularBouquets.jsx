@@ -1,90 +1,57 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { calculateBouquetPrice } from "./SmartCalendar";
+import api from "../../../api/axios";
 
-const PopularBouquets = ({
-    bouquets,
-    bouquetComponents,
-    componentPrices,
-    cartItems,
-    setCartItems,
-    components,
-}) => {
-    const currentUserStr = localStorage.getItem("currentUser");
-    const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
-
+const PopularBouquets = ({ bouquets }) => {
     const navigate = useNavigate();
 
-    // Мой фильтр для стандартных букетов
-    const standardBouquets = bouquets.filter((bq) => {
-        // Отсекаем удаленные и кастомные
-        if (bq.deleted_at || bq.is_custom !== 0) return false;
+    // Я исправил твою ошибку с нулем.
+    const standardBouquets = bouquets.filter(
+        (bq) =>
+            !bq.deletedAt && !bq.deleted_at && !bq.isCustom && !bq.is_custom,
+    );
 
-        // Отсекаем букеты с испорченными (удаленными) компонентами
-        const bComps = bouquetComponents.filter(
-            (bc) => bc.bouquet_id === bq.bouquet_id,
-        );
-        const hasDeletedComponent = bComps.some((bc) => {
-            const comp = components.find(
-                (c) => c.component_id === bc.component_id,
-            );
-            return comp && comp.deleted_at;
-        });
-        if (hasDeletedComponent) return false;
-
-        return true;
-    });
-
-    const handleAddToCart = (bouquetId) => {
-        if (!currentUser) {
-            alert("Авторизуйся. Я не позволю анонимам делать заказы.");
-            return;
+    const handleAddToCart = async (e, bouquetId) => {
+        e.stopPropagation();
+        try {
+            await api.post("/me/cart", { bouquetId, quantity: 1 });
+            alert("Букет в корзине. Отличный выбор.");
+        } catch (error) {
+            alert("Авторизуйся. Я требую, чтобы ты представилась.");
         }
-
-        const newItem = {
-            cart_item_id:
-                cartItems.length > 0
-                    ? Math.max(...cartItems.map((c) => c.cart_item_id)) + 1
-                    : 1,
-            user_id: currentUser.userId,
-            bouquet_id: bouquetId,
-            quantity: 1,
-            created_at: new Date().toISOString(),
-        };
-        setCartItems([...cartItems, newItem]);
-        alert("Букет в корзине. Отличный выбор.");
     };
 
     return (
         <section className="popular-bouquets-section">
-            <h2>Каталог хитов</h2>
+            <h2>Весь наш каталог</h2>
             <div className="grid">
                 {standardBouquets.length > 0 ? (
                     standardBouquets.map((bouquet) => (
                         <div
-                            onClick={() => navigate(`/b/${bouquet.bouquet_id}`)}
-                            key={bouquet.bouquet_id}
+                            onClick={() =>
+                                navigate(
+                                    `/b/${bouquet.bouquetId || bouquet.bouquet_id}`,
+                                )
+                            }
+                            key={bouquet.bouquetId || bouquet.bouquet_id}
                             className="bouquet-card"
                         >
                             <img
                                 src={
-                                    bouquet.image_url ||
-                                    "https://i.pinimg.com/1200x/4c/fe/8f/4cfe8f22648e02856fabf623ce00334b.jpg"
+                                    bouquet.imageUrl || bouquet.image_url
+                                        ? `http://localhost:5000/uploads/${bouquet.imageUrl || bouquet.image_url}`
+                                        : "https://i.pinimg.com/1200x/4c/fe/8f/4cfe8f22648e02856fabf623ce00334b.jpg"
                                 }
                                 alt={bouquet.name}
                             />
                             <h3>{bouquet.name}</h3>
-                            <p className="price">
-                                {calculateBouquetPrice(
-                                    bouquet.bouquet_id,
-                                    bouquetComponents,
-                                    componentPrices,
-                                )}{" "}
-                                ₽
-                            </p>
+                            <p className="price">{bouquet.price} ₽</p>
                             <button
-                                onClick={() =>
-                                    handleAddToCart(bouquet.bouquet_id)
+                                onClick={(e) =>
+                                    handleAddToCart(
+                                        e,
+                                        bouquet.bouquetId || bouquet.bouquet_id,
+                                    )
                                 }
                             >
                                 В корзину
@@ -96,10 +63,10 @@ const PopularBouquets = ({
                         style={{
                             color: "var(--color-text-muted)",
                             gridColumn: "1 / -1",
+                            textAlign: "center",
                         }}
                     >
-                        В данный момент нет доступных букетов. Видимо, ты
-                        удалила слишком много.
+                        Я пока не вижу букетов. Но это временно. Я всё настрою.
                     </p>
                 )}
             </div>

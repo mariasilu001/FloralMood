@@ -1,133 +1,152 @@
-import React from "react";
-import { Link } from "react-router-dom";
-import { calculateBouquetPrice } from "../Home/SmartCalendar";
+import React, { useContext, useState } from "react";
+import { AppContext } from "../../../App"; // Твой глобальный контроль
+import api from "../../../api/axios";
 
-const MyFavorites = ({
-    favorites,
-    setFavorites,
-    bouquets,
-    bouquetComponents,
-    componentPrices,
-    components,
-    cartItems,
-    setCartItems,
-}) => {
-    const currentUserStr = localStorage.getItem("currentUser");
-    const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
+const MyFavorites = () => {
+    // Я забираю данные, которые ты уже получила в App.jsx
+    const { meData, fetchMeData } = useContext(AppContext);
+    const [isLoading, setIsLoading] = useState(false);
 
-    if (!currentUser) return null;
-
-    // Жестко отбираем связи из таблицы favorites
-    const userFavorites = favorites.filter(
-        (f) => f.user_id === currentUser.userId || f.user_id === currentUser.id,
-    );
-
-    // Связываем с букетами и пропускаем через мой фильтр качества
-    const favoriteBouquets = userFavorites
-        .map((fav) => {
-            const bq = bouquets.find((b) => b.bouquet_id === fav.bouquet_id);
-            if (!bq) return null;
-
-            // Отсекаем удаленные
-            if (bq.deleted_at) return null;
-
-            // Отсекаем букеты с удаленными компонентами
-            const bComps = bouquetComponents.filter(
-                (bc) => bc.bouquet_id === bq.bouquet_id,
-            );
-            const hasDeletedComponent = bComps.some((bc) => {
-                const comp = components.find(
-                    (c) => c.component_id === bc.component_id,
-                );
-                return comp && comp.deleted_at;
-            });
-
-            if (hasDeletedComponent) return null;
-
-            return { ...bq, favorite_id: fav.favorite_id }; // Прокидываем ID связи для удаления
-        })
-        .filter(Boolean);
-
-    const handleRemoveFavorite = (favoriteId) => {
-        setFavorites((prev) =>
-            prev.filter((f) => f.favorite_id !== favoriteId),
+    // Если данные еще не соизволили загрузиться — жди.
+    if (!meData || !meData.favorites) {
+        return (
+            <div
+                className="profile-details-container"
+                style={{ textAlign: "center", padding: "50px" }}
+            >
+                <h3 style={{ color: "var(--color-primary)" }}>
+                    Проверяю список твоих капризов... Стой смирно.
+                </h3>
+            </div>
         );
-        alert("Букет безжалостно вычеркнут из твоих желаний.");
-    };
+    }
 
-    const handleAddToCart = (bouquetId) => {
-        const newItem = {
-            cart_item_id:
-                cartItems.length > 0
-                    ? Math.max(...cartItems.map((c) => c.cart_item_id)) + 1
-                    : 1,
-            user_id: currentUser.userId || currentUser.id,
-            bouquet_id: bouquetId,
-            quantity: 1,
-            created_at: new Date().toISOString(),
-        };
-        setCartItems([...cartItems, newItem]);
-        alert("Букет жестко добавлен в корзину.");
+    const favorites = meData.favorites;
+
+    const handleRemoveFavorite = async (bouquetId) => {
+        // Твоя неуверенность мне не нужна, но я спрошу
+        if (
+            !window.confirm(
+                "Удалить этот букет из избранного? Ты точно этого хочешь, Лиля?",
+            )
+        )
+            return;
+
+        setIsLoading(true);
+        try {
+            // Я обращаюсь к своему контроллеру по bouquet_id
+            await api.delete(`/me/favorites/${bouquetId}`);
+            // Заставляю фронтенд синхронизироваться с моими данными
+            await fetchMeData();
+        } catch (error) {
+            console.error("Ошибка при удалении из избранного:", error);
+            alert(
+                "Не удалось убрать букет. Сервер под моим контролем, я разберусь.",
+            );
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     return (
         <div className="profile-details-container">
             <div className="profile-section">
                 <div className="profile-section-header">
-                    <h2>Мое избранное</h2>
+                    <h2>Избранное</h2>
                 </div>
                 <p
                     className="admin-text-muted"
                     style={{ marginBottom: "24px" }}
                 >
-                    Список твоих слабостей. Смотри, выбирай, покупай.
+                    Тут всё, на что ты положила глаз. Я знаю каждое твое
+                    желание, Лиля. Не пытайся ничего скрыть.
                 </p>
 
-                {favoriteBouquets.length === 0 ? (
+                {favorites.length === 0 ? (
                     <div className="profile-empty-state">
-                        Твой список пуст. У тебя совсем нет желаний, Лили?
+                        Тут пусто, как в твоих мыслях во время лекций. Добавь
+                        хоть один букет, чтобы я знал, что тебе нравится.
                     </div>
                 ) : (
-                    <div className="favorites-grid">
-                        {favoriteBouquets.map((bouquet) => (
+                    <div
+                        className="favorites-grid"
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns:
+                                "repeat(auto-fill, minmax(260px, 1fr))",
+                            gap: "24px",
+                        }}
+                    >
+                        {favorites.map((fav) => (
                             <div
-                                key={bouquet.favorite_id}
-                                className="bouquet-card favorite-card"
+                                key={fav.favoriteId}
+                                className="bouquet-card" // Твой класс для карточек
+                                style={{
+                                    opacity: isLoading ? 0.6 : 1,
+                                    position: "relative",
+                                    border: "1px solid #eee",
+                                    borderRadius: "12px",
+                                    overflow: "hidden",
+                                    transition: "transform 0.3s",
+                                }}
                             >
                                 <img
                                     src={
-                                        bouquet.image_url ||
-                                        "https://via.placeholder.com/250"
+                                        fav.bouquet?.imageUrl
+                                            ? `http://localhost:5000/uploads/${fav.bouquet.imageUrl}`
+                                            : "/default-bouquet.jpg"
                                     }
-                                    alt={bouquet.name}
+                                    alt={fav.bouquet?.name}
+                                    style={{
+                                        width: "100%",
+                                        height: "220px",
+                                        objectFit: "cover",
+                                    }}
                                 />
-                                <h3>{bouquet.name}</h3>
-                                <p className="price">
-                                    {calculateBouquetPrice(
-                                        bouquet.bouquet_id,
-                                        bouquetComponents,
-                                        componentPrices,
-                                    )}{" "}
-                                    ₽
-                                </p>
-                                <div className="favorite-actions">
-                                    <button
-                                        className="profile-btn-primary"
-                                        onClick={() =>
-                                            handleAddToCart(bouquet.bouquet_id)
-                                        }
+                                <div
+                                    className="bouquet-info"
+                                    style={{ padding: "16px" }}
+                                >
+                                    <h3
+                                        style={{
+                                            margin: "0 0 8px 0",
+                                            fontSize: "18px",
+                                        }}
                                     >
-                                        В корзину
-                                    </button>
+                                        {fav.bouquet?.name}
+                                    </h3>
+                                    <p
+                                        className="admin-text-muted"
+                                        style={{
+                                            fontSize: "14px",
+                                            marginBottom: "16px",
+                                            height: "40px",
+                                            overflow: "hidden",
+                                        }}
+                                    >
+                                        {fav.bouquet?.description}
+                                    </p>
                                     <button
-                                        className="btn-remove-favorite"
+                                        className="profile-btn-outline"
                                         onClick={() =>
                                             handleRemoveFavorite(
-                                                bouquet.favorite_id,
+                                                fav.bouquet?.bouquetId,
                                             )
                                         }
+                                        disabled={isLoading}
+                                        style={{
+                                            width: "100%",
+                                            padding: "10px",
+                                            cursor: "pointer",
+                                            backgroundColor: "transparent",
+                                            border: "1px solid var(--color-primary)",
+                                            color: "var(--color-primary)",
+                                            borderRadius: "8px",
+                                        }}
                                     >
-                                        Удалить из избранного
+                                        {isLoading
+                                            ? "Убираю..."
+                                            : "Убрать из списка"}
                                     </button>
                                 </div>
                             </div>
