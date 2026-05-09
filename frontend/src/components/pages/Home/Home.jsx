@@ -14,6 +14,7 @@ const Home = ({
     componentPrices,
     cartItems,
     setCartItems,
+    components, // Принимаем компоненты по моему приказу
 }) => {
     return (
         <div className="home-page">
@@ -29,6 +30,7 @@ const Home = ({
                 componentPrices={componentPrices}
                 cartItems={cartItems}
                 setCartItems={setCartItems}
+                components={components} // Передаем дальше
             />
             <PopularBouquets
                 bouquets={bouquets}
@@ -36,6 +38,7 @@ const Home = ({
                 componentPrices={componentPrices}
                 cartItems={cartItems}
                 setCartItems={setCartItems}
+                components={components} // Передаем дальше
             />
         </div>
     );

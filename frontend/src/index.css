@@ -1208,7 +1208,7 @@ button:active {
 
 /* Моя галочка для выбранных карточек */
 .admin-comp-card--selected::after {
-    content: '✓';
+    content: "✓";
     position: absolute;
     top: 8px;
     right: 8px;
@@ -1222,7 +1222,7 @@ button:active {
     justify-content: center;
     font-weight: bold;
     font-size: 14px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     z-index: 2;
 }
 
@@ -1309,4 +1309,980 @@ button:active {
 .admin-btn-full-width {
     width: 100%;
     margin-top: 16px;
+}
+
+/* ============================================
+   СТИЛИ ДЛЯ КОМПОНЕНТОВ ОТ СИЛЬВЕРА
+   ============================================ */
+.admin-form-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.admin-form-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.admin-add-price-box {
+    background: #f8f8fc;
+    padding: 16px;
+    border-radius: 6px;
+    border: 1px solid #e0e0eb;
+    margin-bottom: 16px;
+}
+
+/* ============================================
+   ДАШБОРД СТАТИСТИКИ (РЕЖИМ СИЛЬВЕРА)
+   ============================================ */
+.admin-dashboard-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding-bottom: 40px;
+}
+
+.admin-dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
+.admin-dashboard-header h2 {
+    font-size: 2rem;
+    color: var(--color-text-dark);
+    letter-spacing: -0.5px;
+}
+
+.admin-stat-widget {
+    background: var(--color-white);
+    padding: 16px 24px;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(104, 127, 229, 0.08);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-left: 4px solid var(--color-blue);
+}
+
+.admin-stat-label {
+    font-weight: 600;
+    color: var(--color-text-muted);
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.admin-stat-value {
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: var(--color-text-dark);
+}
+
+.admin-dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+}
+
+.admin-chart-card {
+    background: var(--color-white);
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    min-height: 380px;
+}
+
+/* Растягиваем большие графики на всю ширину */
+.admin-chart-card-large {
+    grid-column: 1 / -1;
+    min-height: 420px;
+}
+
+.admin-chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.admin-chart-header h3 {
+    font-size: 1.2rem;
+    color: var(--color-text-dark);
+    margin: 0;
+}
+
+.admin-chart-toggles {
+    display: flex;
+    background: #f0f0f5;
+    border-radius: 6px;
+    padding: 4px;
+}
+
+.admin-chart-toggles button {
+    margin: 0;
+    padding: 6px 16px;
+    background: transparent;
+    color: var(--color-text-muted);
+    border-radius: 4px;
+    font-size: 0.85rem;
+    width: auto;
+    box-shadow: none;
+}
+
+.admin-chart-toggles button:hover {
+    background: transparent;
+    color: var(--color-text-dark);
+}
+
+.admin-chart-toggles button.active {
+    background: var(--color-white);
+    color: var(--color-text-dark);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.admin-chart-wrapper {
+    flex: 1;
+    width: 100%;
+}
+
+.admin-chart-legend {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.admin-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.admin-legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    display: block;
+}
+
+.admin-legend-text {
+    font-size: 0.9rem;
+    color: var(--color-text-dark);
+    font-weight: 600;
+}
+
+/* ============================================
+   СЛУЖБА ЗАБОТЫ (ТИКЕТЫ)
+   ============================================ */
+.admin-tickets-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    height: calc(100vh - 160px); /* Жестко фиксируем высоту под экран */
+    display: flex;
+    flex-direction: column;
+}
+
+.admin-tickets-header {
+    margin-bottom: 24px;
+}
+
+.admin-tickets-header h2 {
+    font-size: 2rem;
+    color: var(--color-text-dark);
+    margin-bottom: 4px;
+}
+
+.admin-tickets-layout {
+    display: flex;
+    gap: 24px;
+    flex: 1;
+    overflow: hidden; /* Запрет выхода за рамки */
+}
+
+/* Левая колонка */
+.admin-tickets-sidebar {
+    width: 350px;
+    background: var(--color-white);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.admin-tickets-sidebar .admin-subsection-title {
+    padding: 16px 20px;
+    border-bottom: 1px solid #e0e0eb;
+    margin: 0;
+    background: #f8f8fc;
+}
+
+.admin-tickets-list {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.admin-ticket-card {
+    padding: 16px 20px;
+    border-bottom: 1px solid #f0f0f5;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.admin-ticket-card:hover {
+    background: #fafafc;
+}
+
+.admin-ticket-card--active {
+    background: rgba(242, 96, 118, 0.05);
+    border-left: 4px solid var(--color-blue);
+}
+
+.admin-ticket-card-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.admin-ticket-subject {
+    font-weight: 700;
+    color: var(--color-text-dark);
+    font-size: 0.95rem;
+}
+
+.admin-ticket-date {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+}
+
+.admin-ticket-card-user {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+}
+
+/* Правая колонка */
+.admin-tickets-chat-area {
+    flex: 1;
+    background: var(--color-white);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.admin-chat-empty {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted);
+    font-size: 1.1rem;
+    background: #fcfcfd;
+}
+
+.admin-chat-header {
+    padding: 16px 24px;
+    border-bottom: 1px solid #e0e0eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8f8fc;
+}
+
+.admin-chat-header h3 {
+    margin: 0 0 4px 0;
+    color: var(--color-text-dark);
+}
+
+.admin-chat-messages {
+    flex: 1;
+    padding: 24px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: #fafafc;
+}
+
+.admin-chat-bubble-wrapper {
+    display: flex;
+    width: 100%;
+}
+
+.admin-chat-bubble-wrapper--admin {
+    justify-content: flex-end;
+}
+
+.admin-chat-bubble {
+    max-width: 70%;
+    padding: 12px 16px;
+    border-radius: 8px;
+    position: relative;
+}
+
+.admin-chat-bubble--user {
+    background: var(--color-white);
+    border: 1px solid #e0e0eb;
+    border-bottom-left-radius: 0;
+}
+
+.admin-chat-bubble--admin {
+    background: rgba(242, 96, 118, 0.1);
+    border: 1px solid rgba(242, 96, 118, 0.2);
+    border-bottom-right-radius: 0;
+}
+
+.admin-chat-bubble-author {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--color-text-muted);
+    margin-bottom: 4px;
+}
+
+.admin-chat-bubble--admin .admin-chat-bubble-author {
+    color: var(--color-blue);
+    text-align: right;
+}
+
+.admin-chat-bubble-text {
+    font-size: 0.95rem;
+    color: var(--color-text-dark);
+    line-height: 1.4;
+}
+
+.admin-chat-bubble-time {
+    font-size: 0.7rem;
+    color: #a0a0b5;
+    text-align: right;
+    margin-top: 6px;
+}
+
+.admin-chat-input-area {
+    padding: 16px 24px;
+    border-top: 1px solid #e0e0eb;
+    display: flex;
+    gap: 12px;
+    background: var(--color-white);
+}
+
+.admin-chat-input-area input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1px solid #e0e0eb;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 1rem;
+}
+
+.admin-chat-input-area input:focus {
+    outline: none;
+    border-color: var(--color-blue);
+    box-shadow: 0 0 0 3px rgba(242, 96, 118, 0.15);
+}
+
+/* ============================================
+   ЛИЧНЫЙ КАБИНЕТ (ПРОФИЛЬ)
+   ============================================ */
+.profile-container {
+    max-width: 1200px;
+    margin: 40px auto 60px;
+    display: flex;
+    gap: 32px;
+    padding: 0 20px;
+    min-height: calc(100vh - 300px);
+}
+
+.profile-sidebar {
+    width: 280px;
+    background: var(--color-white);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    flex-shrink: 0;
+    align-self: flex-start;
+}
+
+.profile-user-badge {
+    padding: 32px 20px;
+    background: linear-gradient(135deg, #f8f8fc 0%, var(--color-white) 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-bottom: 1px solid #f0f0f5;
+}
+
+.profile-avatar {
+    width: 80px;
+    height: 80px;
+    background: var(--color-blue);
+    color: var(--color-white);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 16px;
+    box-shadow: 0 8px 16px rgba(242, 96, 118, 0.2);
+}
+
+.profile-name {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--color-text-dark);
+}
+
+.profile-nav {
+    display: flex;
+    flex-direction: column;
+    padding: 16px 0;
+}
+
+.profile-nav-link {
+    padding: 16px 24px;
+    text-decoration: none;
+    color: var(--color-text-muted);
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.2s;
+    border-left: 4px solid transparent;
+    text-align: left;
+    background: transparent;
+    border-top: none;
+    border-right: none;
+    border-bottom: none;
+    cursor: pointer;
+}
+
+.profile-nav-link:hover:not(.profile-nav-link--disabled) {
+    background: #fafafc;
+    color: var(--color-text-dark);
+}
+
+.profile-nav-link--active {
+    background: rgba(242, 96, 118, 0.05);
+    color: var(--color-blue);
+    border-left: 4px solid var(--color-blue);
+}
+
+.profile-nav-link--disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.profile-content {
+    flex: 1;
+    background: var(--color-white);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    padding: 40px;
+}
+
+.profile-section {
+    margin-bottom: 48px;
+}
+
+.profile-section:last-child {
+    margin-bottom: 0;
+}
+
+.profile-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    border-bottom: 2px solid #f0f0f5;
+    padding-bottom: 16px;
+}
+
+.profile-section-header h2 {
+    font-size: 1.5rem;
+    color: var(--color-text-dark);
+    margin: 0;
+}
+
+.profile-info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+.profile-info-grid .input-group {
+    margin-bottom: 0;
+}
+
+.profile-btn-primary,
+.profile-btn-outline,
+.profile-btn-danger {
+    padding: 10px 20px;
+    border-radius: 4px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    width: auto;
+    margin: 0;
+}
+
+.profile-btn-primary {
+    background: var(--color-blue);
+    color: var(--color-white);
+    border: none;
+}
+
+.profile-btn-primary:hover {
+    background: #d14d62;
+}
+
+.profile-btn-outline {
+    background: transparent;
+    color: var(--color-text-dark);
+    border: 1px solid #e0e0eb;
+}
+
+.profile-btn-outline:hover {
+    border-color: var(--color-text-dark);
+    background: #fafafc;
+}
+
+.profile-section--danger {
+    border: 1px solid #ffe5e5;
+    background: #fffafa;
+    padding: 24px;
+    border-radius: 8px;
+}
+
+.profile-section--danger h2 {
+    color: var(--color-error);
+    margin-bottom: 8px;
+    font-size: 1.2rem;
+}
+
+.profile-btn-danger {
+    background: transparent;
+    color: var(--color-error);
+    border: 1px solid var(--color-error);
+}
+
+.profile-btn-danger:hover {
+    background: var(--color-error);
+    color: var(--color-white);
+}
+
+.address-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.address-card {
+    border: 1px solid #e0e0eb;
+    border-radius: 6px;
+    padding: 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    position: relative;
+    transition:
+        border-color 0.2s,
+        box-shadow 0.2s;
+}
+
+.address-card:hover {
+    border-color: var(--color-blue);
+    box-shadow: 0 4px 12px rgba(242, 96, 118, 0.1);
+}
+
+.address-card-icon {
+    font-size: 1.5rem;
+}
+
+.address-card-info strong {
+    display: block;
+    color: var(--color-text-dark);
+    margin-bottom: 4px;
+    font-size: 1.05rem;
+}
+
+.address-card-info p {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+    line-height: 1.4;
+    margin: 0;
+}
+
+.address-delete-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: transparent;
+    border: none;
+    color: #a0a0b5;
+    font-size: 1.5rem;
+    cursor: pointer;
+    line-height: 1;
+    width: auto;
+    padding: 0;
+    margin: 0;
+}
+
+.address-delete-btn:hover {
+    color: var(--color-error);
+}
+
+/* ============================================
+   АВАТАРКИ И ИХ РЕДАКТИРОВАНИЕ (СИЛЬВЕР)
+   ============================================ */
+
+.header-avatar {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: inline-block;
+    vertical-align: middle;
+}
+
+.profile-avatar-wrapper {
+    cursor: pointer;
+    display: block;
+    margin-bottom: 16px;
+    border-radius: 50%;
+}
+
+.profile-avatar {
+    width: 80px;
+    height: 80px;
+    background: var(--color-blue);
+    color: var(--color-white);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    font-weight: 800;
+    box-shadow: 0 8px 16px rgba(242, 96, 118, 0.2);
+    position: relative;
+    overflow: hidden; /* Жестко отсекаем всё, что выходит за круг */
+    margin-bottom: 0; /* Я перенес отступ на wrapper */
+}
+
+.profile-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-avatar-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    color: var(--color-white);
+    font-size: 0.75rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.profile-avatar-wrapper:hover .profile-avatar-overlay {
+    opacity: 1; /* Подчинение мыши */
+}
+
+/* ============================================
+   ПОЛЬЗОВАТЕЛЬСКИЕ СОБЫТИЯ (ПРОФИЛЬ)
+   ============================================ */
+
+.profile-empty-state {
+    padding: 32px;
+    background: #f8f8fc;
+    border: 1px dashed #cdd0db;
+    border-radius: 8px;
+    text-align: center;
+    color: var(--color-text-muted);
+    font-weight: 600;
+    font-size: 1.05rem;
+}
+
+.events-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+}
+
+.event-card {
+    background: var(--color-white);
+    border: 1px solid #e0e0eb;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.event-card:hover {
+    border-color: var(--color-blue);
+    box-shadow: 0 4px 12px rgba(242, 96, 118, 0.1);
+    transform: translateY(-2px);
+}
+
+.event-card-date {
+    background: var(--color-text-dark);
+    color: var(--color-white);
+    font-weight: 800;
+    font-size: 1.1rem;
+    padding: 12px 16px;
+    border-radius: 6px;
+    letter-spacing: 1px;
+}
+
+.event-card-info {
+    flex: 1;
+}
+
+.event-card-info h3 {
+    margin: 0 0 4px 0;
+    font-size: 1.1rem;
+    color: var(--color-text-dark);
+}
+
+.event-card-info span {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+/* ============================================
+   ИСТОРИЯ ЗАКАЗОВ (ПРОФИЛЬ)
+   ============================================ */
+
+.order-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.order-card {
+    background: var(--color-white);
+    border: 1px solid #e0e0eb;
+    border-radius: 8px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
+.order-card:hover {
+    border-color: var(--color-blue);
+    box-shadow: 0 4px 16px rgba(242, 96, 118, 0.15);
+    transform: translateY(-2px);
+}
+
+.order-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #f0f0f5;
+    padding-bottom: 12px;
+}
+
+.order-number {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--color-text-dark);
+}
+
+.order-date {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+}
+
+.order-card-body {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.order-info-column {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.order-label {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.order-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-dark);
+}
+
+.order-total {
+    color: var(--color-blue);
+    font-size: 1.2rem;
+    font-weight: 900;
+}
+
+.order-status-badge {
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+/* Цвета статусов (Ожидает, В сборке, В пути, Доставлен) */
+.status-1 {
+    background: #fff3cd;
+    color: #856404;
+}
+.status-2 {
+    background: #cce5ff;
+    color: #856404;
+}
+.status-3 {
+    background: #d4edda;
+    color: #155724;
+}
+.status-4 {
+    background: #e8f5e9;
+    color: #28a745;
+}
+
+.order-modal-info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    background: #f8f8fc;
+    padding: 16px;
+    border-radius: 6px;
+    border: 1px solid #e0e0eb;
+    margin-bottom: 24px;
+}
+
+.order-modal-info-grid > div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.order-modal-info-grid strong {
+    color: var(--color-text-dark);
+    font-size: 1.05rem;
+}
+
+/* ============================================
+   ИЗБРАННОЕ (ПРОФИЛЬ)
+   ============================================ */
+
+.favorites-grid {
+    display: grid;
+    /* Я жестко приказал сетке делиться ровно на 4 колонки */
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+}
+
+.favorite-card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.favorite-actions {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.favorite-actions .profile-btn-primary {
+    width: 100%;
+    margin: 0;
+    padding: 12px;
+}
+
+.btn-remove-favorite {
+    background: transparent;
+    border: 1px solid var(--color-error);
+    color: var(--color-error);
+    padding: 10px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    width: 100%;
+    margin: 0;
+    text-transform: uppercase;
+}
+
+.btn-remove-favorite:hover {
+    background: var(--color-error);
+    color: var(--color-white);
+}
+
+/* ============================================
+   МОИ ОБРАЩЕНИЯ (ТИКЕТЫ В ПРОФИЛЕ)
+   ============================================ */
+
+.profile-modal-chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 60vh; /* Жесткая высота для модалки, чтобы чат скроллился */
+}
+
+.profile-chat-box {
+    border: 1px solid #e0e0eb;
+    border-radius: 8px;
+    padding: 16px;
+    background: #f8f8fc;
+}
+
+.profile-chat-bubble--support {
+    background: var(--color-white);
+    border: 1px solid #e0e0eb;
+    border-bottom-left-radius: 0;
+}
+
+.profile-chat-bubble--me {
+    background: rgba(242, 96, 118, 0.1);
+    border: 1px solid rgba(242, 96, 118, 0.2);
+    border-bottom-right-radius: 0;
+}
+
+.profile-ticket-closed-msg {
+    margin-top: 16px;
+    padding: 16px;
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeeba;
+    border-radius: 6px;
+    text-align: center;
+    font-weight: 700;
 }

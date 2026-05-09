@@ -3,13 +3,10 @@ import { Outlet } from "react-router-dom";
 import Header from "./Header";
 import Footer from "./Footer";
 
-const MainLayout = ({ searchHistory, setSearchHistory }) => {
+const MainLayout = () => {
     return (
         <div className="layout-wrapper">
-            <Header
-                searchHistory={searchHistory}
-                setSearchHistory={setSearchHistory}
-            />
+            <Header />
             <main className="main-content">
                 <Outlet />
                 <Footer />

@@ -21,6 +21,16 @@ const AdminLayout = () => {
                 </div>
                 <nav className="admin-layout-nav">
                     <NavLink
+                        to="/admin"
+                        className={({ isActive }) =>
+                            isActive
+                                ? "admin-layout-nav-link admin-layout-nav-link--active"
+                                : "admin-layout-nav-link"
+                        }
+                    >
+                        Статистика
+                    </NavLink>
+                    <NavLink
                         to="/admin/bouquets"
                         className={({ isActive }) =>
                             isActive
@@ -30,7 +40,26 @@ const AdminLayout = () => {
                     >
                         Управление букетами
                     </NavLink>
-                    {/* В будущем я добавлю сюда другие разделы для тебя */}
+                    <NavLink
+                        to="/admin/components"
+                        className={({ isActive }) =>
+                            isActive
+                                ? "admin-layout-nav-link admin-layout-nav-link--active"
+                                : "admin-layout-nav-link"
+                        }
+                    >
+                        Управление компонентами
+                    </NavLink>
+                    <NavLink
+                        to="/admin/tickets"
+                        className={({ isActive }) =>
+                            isActive
+                                ? "admin-layout-nav-link admin-layout-nav-link--active"
+                                : "admin-layout-nav-link"
+                        }
+                    >
+                        Служба заботы
+                    </NavLink>
                 </nav>
             </header>
             <main className="admin-layout-content">

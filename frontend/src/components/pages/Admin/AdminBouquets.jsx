@@ -77,6 +77,32 @@ const AdminBouquets = ({
         }
     };
 
+    // Моя новая жесткая функция для замены фото существующего букета
+    const handleEditImageUpload = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const newImageUrl = reader.result;
+                setBouquets((prev) =>
+                    prev.map((b) =>
+                        b.bouquet_id === selectedBouquet.bouquet_id
+                            ? { ...b, image_url: newImageUrl }
+                            : b,
+                    ),
+                );
+                setSelectedBouquet((prev) => ({
+                    ...prev,
+                    image_url: newImageUrl,
+                }));
+                alert(
+                    "Изображение безжалостно заменено. Я контролирую каждый пиксель.",
+                );
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
     const handleAddBouquet = (e) => {
         e.preventDefault();
         if (!newBouquet.name) {
@@ -198,7 +224,6 @@ const AdminBouquets = ({
         if (target === "new") {
             setTempSelections({ ...newBouquet.selectedComponents });
         } else {
-            // Я заставил код подтягивать текущие компоненты букета.
             const currentComps = bouquetComponents.filter(
                 (bc) => bc.bouquet_id === target,
             );
@@ -237,7 +262,6 @@ const AdminBouquets = ({
                 selectedComponents: tempSelections,
             }));
         } else {
-            // Я забираю все компоненты от других букетов, чтобы не трогать их
             const otherBcs = bouquetComponents.filter(
                 (bc) => bc.bouquet_id !== compModalTarget,
             );
@@ -252,7 +276,6 @@ const AdminBouquets = ({
                     : 0;
             const updatedCurrentBcs = [];
 
-            // Безжалостно перезаписываем связи для текущего букета
             Object.entries(tempSelections).forEach(([compIdStr, qty]) => {
                 const compId = parseInt(compIdStr);
                 const quantity = parseFloat(qty);
@@ -265,10 +288,8 @@ const AdminBouquets = ({
                     );
 
                     if (existingBc) {
-                        // Обновляем количество, если компонент уже был
                         updatedCurrentBcs.push({ ...existingBc, quantity });
                     } else {
-                        // Создаем новую связь
                         maxId++;
                         updatedCurrentBcs.push({
                             bouquet_component_id: maxId,
@@ -280,7 +301,6 @@ const AdminBouquets = ({
                 }
             });
 
-            // Жестко склеиваем чужие компоненты с нашими обновленными
             setBouquetComponents([...otherBcs, ...updatedCurrentBcs]);
         }
         setIsCompModalOpen(false);
@@ -366,6 +386,32 @@ const AdminBouquets = ({
                     title={`Детали: ${selectedBouquet.name}`}
                     onClose={() => setSelectedBouquet(null)}
                 >
+                    <div className="admin-desc-edit-group">
+                        <label>Изображение букета:</label>
+                        {selectedBouquet.image_url && (
+                            <img
+                                src={selectedBouquet.image_url}
+                                alt="Текущее фото"
+                                className="admin-bouquets-preview-large"
+                                style={{
+                                    marginBottom: "12px",
+                                    maxHeight: "150px",
+                                }}
+                            />
+                        )}
+                        <label className="admin-file-upload-label">
+                            <span className="admin-file-upload-text">
+                                Загрузить новое фото
+                            </span>
+                            <input
+                                type="file"
+                                accept="image/*"
+                                onChange={handleEditImageUpload}
+                                className="admin-file-upload-input"
+                            />
+                        </label>
+                    </div>
+
                     <div className="admin-desc-edit-group">
                         <label>Описание букета:</label>
                         <div className="admin-desc-edit-wrapper">

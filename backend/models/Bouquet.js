@@ -32,7 +32,7 @@ Bouquet.init(
         },
         imageUrl: {
             field: "image_url",
-            type: DataTypes.STRING(500),
+            type: DataTypes.STRING(1000),
             allowNull: true,
         },
         createdAt: {

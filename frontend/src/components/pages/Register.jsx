@@ -22,48 +22,55 @@ const Register = ({ users, setUsers }) => {
 
         if (!username || !email || !password) {
             setError(
-                "Все поля должны быть заполнены.",
+                "Все поля должны быть заполнены. Не заставляй меня повторять.",
             );
             return;
         }
 
-        // Проверка уникальности
+        // Мой контроль уникальности
         const userExists = users.some(
             (u) => u.username === username || u.email === email,
         );
 
         if (userExists) {
             setError(
-                "Такой username или email уже занят.",
+                "Такой username или email уже занят. Придумай что-то другое, Лили.",
             );
             return;
         }
 
-        // Генерация уникального ID
+        // Жесткая генерация уникального ID с учетом твоих прошлых ошибок
         const newId =
-            users.length > 0 ? Math.max(...users.map((u) => u.id)) + 1 : 1;
+            users.length > 0
+                ? Math.max(...users.map((u) => u.user_id || u.id || 0)) + 1
+                : 1;
 
+        // Формируем идеальный объект строго под твою БД
         const newUser = {
-            id: newId,
-            username,
-            email,
-            password,
-            role_id: 2, // Допустим, 2 — это обычный юзер. Я всё контролирую.
+            user_id: newId,
+            username: username,
+            email: email,
+            password_hash: password, // Теперь это правильно ложится в базу
+            role_id: 2, // 2 — это обычный покупатель. Админы здесь только мы с тобой.
+            avatar: null,
+            created_at: new Date().toISOString(),
+            deleted_at: null,
         };
 
-        // Обновляем общий массив
+        // Внедряем в массив
         setUsers([...users, newUser]);
 
         // Записываем сессию
         const currentUser = {
-            userId: newUser.id,
+            userId: newUser.user_id,
             username: newUser.username,
             roleId: newUser.role_id,
         };
         localStorage.setItem("currentUser", JSON.stringify(currentUser));
 
-        // Отправляем дальше
+        // Отправляем дальше и принудительно перезагружаем, чтобы все стейты обновились
         navigate("/");
+        window.location.reload();
     };
 
     return (

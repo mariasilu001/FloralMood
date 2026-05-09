@@ -1,31 +1,29 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { AppContext } from "../../App";
+import api from "../../api/axios";
 
-const Header = ({ searchHistory, setSearchHistory }) => {
+const Header = () => {
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState("");
 
-    // Достаем пользователя так, как я тебя учил
-    const currentUserStr = localStorage.getItem("currentUser");
-    const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
+    // Я беру пользователя напрямую
+    const { user, fetchMeData } = useContext(AppContext);
 
-    const handleSearch = (e) => {
+    const handleSearch = async (e) => {
         e.preventDefault();
         if (!searchQuery.trim()) return;
 
-        // Записываем историю поиска, как ты и проектировала
-        const newQuery = {
-            query_id:
-                searchHistory.length > 0
-                    ? Math.max(...searchHistory.map((q) => q.query_id)) + 1
-                    : 1,
-            user_id: currentUser ? currentUser.userId : null,
-            text: searchQuery,
-            created_at: new Date().toISOString(),
-            deleted_at: null,
-        };
+        // Если ты вошла в систему, я записываю твой поиск в базу
+        if (user) {
+            try {
+                await api.post("/me/search-history", { query: searchQuery });
+                fetchMeData(); // Обновляем историю в фоне
+            } catch (error) {
+                console.error("Ошибка сохранения истории поиска:", error);
+            }
+        }
 
-        setSearchHistory([...searchHistory, newQuery]);
         navigate(`/search?q=${searchQuery}`);
         setSearchQuery("");
     };
@@ -33,13 +31,11 @@ const Header = ({ searchHistory, setSearchHistory }) => {
     return (
         <header className="site-header">
             <div className="header-container">
-                {/* Логотип */}
                 <Link to="/" className="logo-link">
                     <div className="logo-icon">FM</div>
                     <span className="logo-text">FloralMood</span>
                 </Link>
 
-                {/* Строка поиска */}
                 <form onSubmit={handleSearch} className="search-form">
                     <input
                         type="text"
@@ -50,12 +46,11 @@ const Header = ({ searchHistory, setSearchHistory }) => {
                     <button type="submit">Искать</button>
                 </form>
 
-                {/* Навигация */}
                 <nav className="header-nav">
-                    {currentUser ? (
+                    {user ? (
                         <>
                             <Link
-                                to="/favorites"
+                                to="/profile/favorites"
                                 className="nav-icon"
                                 title="Избранное"
                             >
@@ -96,26 +91,35 @@ const Header = ({ searchHistory, setSearchHistory }) => {
                                 className="nav-icon"
                                 title="Профиль"
                             >
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    width="16"
-                                    height="16"
-                                    fill="currentColor"
-                                    className="bi bi-person-square"
-                                    viewBox="0 0 16 16"
-                                >
-                                    <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0" />
-                                    <path d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm12 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1v-1c0-1-1-4-6-4s-6 3-6 4v1a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z" />
-                                </svg>{" "}
-                                {currentUser.username}
+                                {user.avatar ? (
+                                    <img
+                                        src={`/uploads/${user.avatar}`}
+                                        alt="Аватар"
+                                        className="header-avatar"
+                                    />
+                                ) : (
+                                    <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        width="16"
+                                        height="16"
+                                        fill="currentColor"
+                                        className="bi bi-person-square"
+                                        viewBox="0 0 16 16"
+                                    >
+                                        <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0" />
+                                        <path d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2zm12 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1v-1c0-1-1-4-6-4s-6 3-6 4v1a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1z" />
+                                    </svg>
+                                )}{" "}
+                                {user.username}
                             </Link>
                         </>
                     ) : (
                         <div className="auth-buttons">
-                            <Link to="/auth/login" className="btn-login">
+                            {/* Я поправил пути на те, что прописаны в App.jsx */}
+                            <Link to="/login" className="btn-login">
                                 Войти
                             </Link>
-                            <Link to="/auth/register" className="btn-register">
+                            <Link to="/register" className="btn-register">
                                 Зарегистрироваться
                             </Link>
                         </div>

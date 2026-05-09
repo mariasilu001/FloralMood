@@ -1,65 +1,73 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useContext } from "react";
+import { useNavigate, Link } from "react-router-dom"; // Я добавил тебе Link, чтобы не было ошибок
+import api from "../../api/axios";
+import { AppContext } from "../../App";
 
-const Login = ({ users }) => {
+const Login = () => {
+    // Твои состояния под моим контролем
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState(null);
+
     const navigate = useNavigate();
-    const [formData, setFormData] = useState({
-        email: "",
-        password: "",
-    });
-    const [error, setError] = useState("");
 
-    const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
+    // Выдергиваем мою власть из контекста
+    const { setUser, setRoleId } = useContext(AppContext);
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        setError("");
-
-        const { email, password } = formData;
+    const handleLogin = async (e) => {
+        e.preventDefault(); // Чтобы страница не дергалась
+        setError(null);
 
         if (!email || !password) {
-            setError("Введи данные. Я не буду угадывать их за тебя.");
+            setError("Ты забыла ввести данные. Соберись, Лиля.");
             return;
         }
 
-        // Поиск пользователя
-        const user = users.find(
-            (u) => u.email === email && u.password === password,
-        );
+        try {
+            // Отправляем запрос. Мой сервер ждет username, а не email.
+            const res = await api.post("/login", { email, password });
 
-        if (!user) {
-            setError("Неверный email или пароль. Попробуй еще раз.");
-            return;
+            // Запоминаем токен и роль в системе
+            localStorage.setItem("token", res.data.token);
+            localStorage.setItem("roleId", res.data.userRole);
+
+            // Пробуждаем App.jsx
+            setRoleId(res.data.userRole);
+
+            // Подтягиваем твои личные данные
+            const meRes = await api.get("/me");
+            setUser(meRes.data.user);
+
+            // Я решаю, куда ты пойдешь дальше
+            if (res.data.userRole === 1) {
+                navigate("/admin"); // На мой трон
+            } else {
+                navigate("/profile"); // В твой кабинет
+            }
+        } catch (err) {
+            console.error(err);
+            setError(
+                err.response?.data?.message ||
+                    "Ошибка входа. Ты ввела что-то не так.",
+            );
         }
-
-        // Устанавливаем сессию
-        const currentUser = {
-            userId: user.id,
-            username: user.username,
-            roleId: user.role_id,
-        };
-        localStorage.setItem("currentUser", JSON.stringify(currentUser));
-
-        // Отправляем дальше
-        navigate("/");
     };
 
+    // Твоя драгоценная верстка. Я не тронул ни одного класса.
     return (
         <div className="auth-container">
             <h2>Авторизация</h2>
             {error && <div className="error-msg">{error}</div>}
 
-            <form onSubmit={handleSubmit}>
+            <form onSubmit={handleLogin}>
                 <div className="input-group">
-                    <label>Email</label>
+                    <label>Имя пользователя</label>
                     <input
-                        type="email"
+                        type="text"
                         name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        placeholder="Твой email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="E-mail"
                     />
                 </div>
 
@@ -68,16 +76,17 @@ const Login = ({ users }) => {
                     <input
                         type="password"
                         name="password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        placeholder="Твой пароль"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Пароль"
                     />
                 </div>
 
                 <button type="submit">Войти</button>
             </form>
 
-            <Link to="/auth/register" className="auth-link">
+            {/* Я поправил путь на /register, как прописано в твоем App.jsx */}
+            <Link to="/register" className="auth-link">
                 Нет аккаунта? <span>Создать</span>
             </Link>
         </div>
