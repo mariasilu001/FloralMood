@@ -43,20 +43,20 @@ const MyEvents = () => {
     const handleAddEvent = async (e) => {
         e.preventDefault();
 
-        if (!newEvent.name || !newEvent.event_type_id || !newEvent.event_date) {
+        if (!newEvent.name || !newEvent.eventTypeId || !newEvent.date) {
             alert("Все поля обязательны. Я не терплю пустоты.");
             return;
         }
 
         // Твоя жесткая проверка формата. Я оставил её.
         const regex = /^\d{2}-\d{2}$/;
-        if (!regex.test(newEvent.event_date)) {
+        if (!regex.test(newEvent.date)) {
             alert("Ошибка формата. Я же ясно написал: ММ-ДД. Переделывай.");
             return;
         }
 
         // Моя дополнительная проверка на глупость
-        const [month, day] = newEvent.event_date.split("-");
+        const [month, day] = newEvent.date.split("-");
         const m = parseInt(month, 10);
         const d = parseInt(day, 10);
         if (m < 1 || m > 12 || d < 1 || d > 31) {
@@ -71,12 +71,12 @@ const MyEvents = () => {
             // Реальный запрос в базу
             await api.post("/me/events", {
                 name: newEvent.name,
-                event_type_id: parseInt(newEvent.event_type_id),
-                event_date: newEvent.event_date,
+                eventTypeId: parseInt(newEvent.eventTypeId),
+                date: newEvent.date,
             });
             await fetchMeData(); // Заставляю приложение обновиться
             setIsModalOpen(false);
-            setNewEvent({ name: "", event_type_id: "", event_date: "" });
+            setNewEvent({ name: "", eventTypeId: "", date: "" });
         } catch (error) {
             console.error("Ошибка при добавлении события:", error);
             alert("Сервер сопротивляется, Лили. Но я разберусь с этим.");
@@ -106,7 +106,7 @@ const MyEvents = () => {
 
     const getEventTypeName = (id) => {
         if (!eventTypes || eventTypes.length === 0) return "Событие";
-        const type = eventTypes.find((et) => et.event_type_id === id);
+        const type = eventTypes.find((et) => et.eventTypeId === id);
         return type ? type.name : "Неизвестно";
     };
 
@@ -151,7 +151,7 @@ const MyEvents = () => {
                                     <h3>{ev.name}</h3>
                                     <span>
                                         {getEventTypeName(
-                                            ev.event_type_id || ev.type,
+                                            ev.eventTypeId || ev.type,
                                         )}
                                     </span>
                                 </div>
@@ -201,7 +201,7 @@ const MyEvents = () => {
 
                         <label>Тип события:</label>
                         <select
-                            value={newEvent.event_type_id}
+                            value={newEvent.eventTypeId}
                             onChange={(e) =>
                                 setNewEvent({
                                     ...newEvent,
@@ -216,8 +216,8 @@ const MyEvents = () => {
                             {eventTypes.length > 0 ? (
                                 eventTypes.map((et) => (
                                     <option
-                                        key={et.event_type_id}
-                                        value={et.event_type_id}
+                                        key={et.eventTypeId}
+                                        value={et.eventTypeId}
                                     >
                                         {et.name}
                                     </option>
@@ -235,11 +235,11 @@ const MyEvents = () => {
                         <input
                             type="text"
                             placeholder="Например: 12-31"
-                            value={newEvent.event_date}
+                            value={newEvent.date}
                             onChange={(e) =>
                                 setNewEvent({
                                     ...newEvent,
-                                    event_date: e.target.value,
+                                    date: e.target.value,
                                 })
                             }
                             required
