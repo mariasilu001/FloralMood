@@ -1,17 +1,17 @@
 .customizer-wrapper {
     display: flex;
     flex-direction: row;
-    height: calc(100vh - 80px);
+    height: calc(100vh - 120px);
     width: 100%;
     max-width: 1400px;
     margin: 0 auto;
-    padding: 24px;
+    padding: 0 24px;
     gap: 24px;
     box-sizing: border-box;
 }
 
 .customizer-main-left {
-    flex: 1;
+    flex: 1.5; /* Даю левой части чуть больше места */
     display: flex;
     flex-direction: column;
     gap: 24px;
@@ -31,7 +31,7 @@
 }
 
 .customizer-components-panel {
-    flex: 1;
+    flex: 2; /* Верхняя панель занимает больше места */
     background: var(--color-white);
     border-radius: 8px;
     box-shadow: 0 4px 16px rgba(104, 127, 229, 0.08);
@@ -43,7 +43,7 @@
 }
 
 .customizer-matched-panel {
-    flex: 1;
+    flex: 1; /* Нижняя панель поменьше */
     background: var(--color-white);
     border-radius: 8px;
     box-shadow: 0 4px 16px rgba(104, 127, 229, 0.08);
@@ -61,17 +61,18 @@
     border-bottom: 1px solid #e0e0eb;
     padding: 8px 16px;
     gap: 8px;
-    flex-shrink: 0;
+    flex-shrink: 0; /* Чтобы меню не сжималось по высоте! */
 }
 
 .customizer-nav-btn {
     background: transparent;
     border: 1px solid transparent;
     color: var(--color-text-muted);
-    padding: 8px 16px;
+    padding: 6px 12px;
     border-radius: 20px;
     white-space: nowrap;
     cursor: pointer;
+    font-size: 0.9rem;
     font-weight: 600;
     transition: all 0.2s;
     width: auto;
@@ -93,10 +94,11 @@
     flex: 1;
     overflow-y: auto;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    /* Я сделал карточки меньше. Теперь они от 110px. */
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
     grid-auto-rows: max-content;
     align-content: start;
-    gap: 16px;
+    gap: 12px;
     padding: 16px;
 }
 
@@ -114,7 +116,9 @@
     display: flex;
     flex-direction: column;
     position: relative;
-    min-height: 180px;
+    /* Убрал жесткую высоту, поставил min-height */
+    min-height: 140px;
+    flex-shrink: 0; /* Я запрещаю им сплющиваться! */
 }
 
 .customizer-comp-card:hover {
@@ -130,23 +134,23 @@
 .customizer-comp-card.selected::after {
     content: "✓";
     position: absolute;
-    top: 8px;
-    right: 8px;
+    top: 6px;
+    right: 6px;
     background: var(--color-blue);
     color: var(--color-white);
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    font-size: 12px;
+    font-size: 10px;
 }
 
 .customizer-comp-image {
     width: 100%;
-    height: 100px;
+    height: 80px; /* Картинки теперь меньше и аккуратнее */
     background: #f8f8fc;
     display: flex;
     align-items: center;
@@ -161,28 +165,31 @@
 }
 
 .customizer-comp-info {
-    padding: 12px;
+    padding: 8px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
 }
 
 .customizer-comp-name {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     font-weight: 600;
     color: var(--color-text-dark);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .customizer-comp-price {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: 800;
     color: var(--color-blue);
 }
 
 .customizer-panel-title {
-    padding: 16px;
+    padding: 12px 16px;
     margin: 0;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     color: var(--color-text-dark);
     border-bottom: 1px solid #e0e0eb;
     background: #f8f8fc;
@@ -195,40 +202,40 @@
     padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
 }
 
 .customizer-selected-category {
     background: #fafafc;
     border: 1px solid #f0f0f5;
     border-radius: 6px;
-    padding: 12px;
+    padding: 10px;
 }
 
 .customizer-cat-title {
-    margin: 0 0 12px 0;
-    font-size: 0.95rem;
+    margin: 0 0 8px 0;
+    font-size: 0.85rem;
     color: var(--color-text-muted);
     text-transform: uppercase;
     letter-spacing: 0.5px;
     border-bottom: 1px dashed #dcdce6;
-    padding-bottom: 8px;
+    padding-bottom: 6px;
 }
 
 .customizer-cat-items {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
 }
 
 .customizer-selected-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: 600;
     color: var(--color-text-dark);
-    padding: 8px 0;
+    padding: 6px 0;
     border-bottom: 1px solid #f0f0f5;
 }
 
@@ -238,18 +245,21 @@
 
 .customizer-item-name {
     flex: 1;
-    padding-right: 12px;
+    padding-right: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .customizer-item-controls {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
 }
 
 .customizer-item-controls button {
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     padding: 0;
     margin: 0;
     display: flex;
@@ -258,7 +268,7 @@
     background: #e0e0eb;
     border: none;
     border-radius: 4px;
-    font-size: 1.2rem;
+    font-size: 1rem;
     font-weight: bold;
     color: var(--color-text-dark);
     cursor: pointer;
@@ -273,19 +283,20 @@
 }
 
 .customizer-item-qty {
-    min-width: 20px;
+    min-width: 16px;
     text-align: center;
+    font-size: 0.9rem;
 }
 
 .customizer-item-price {
-    min-width: 60px;
+    min-width: 50px;
     text-align: right;
     color: var(--color-blue);
     font-weight: 800;
 }
 
 .customizer-summary-box {
-    padding: 20px;
+    padding: 16px;
     background: var(--color-white);
     border-top: 2px solid #f0f0f5;
     flex-shrink: 0;
@@ -295,41 +306,41 @@
     display: flex;
     justify-content: space-between;
     color: var(--color-text-muted);
-    font-size: 0.95rem;
-    margin-bottom: 8px;
+    font-size: 0.9rem;
+    margin-bottom: 6px;
 }
 
 .customizer-summary-total {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 16px;
-    padding-top: 16px;
+    margin-top: 12px;
+    padding-top: 12px;
     border-top: 1px solid #e0e0eb;
 }
 
 .customizer-summary-total span:first-child {
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 700;
     color: var(--color-text-dark);
 }
 
 .customizer-total-price {
-    font-size: 1.6rem;
+    font-size: 1.4rem;
     font-weight: 900;
     color: var(--color-blue);
 }
 
 .customizer-save-btn {
     width: 100%;
-    margin-top: 20px;
+    margin-top: 16px;
     background: var(--color-blue);
     color: var(--color-white);
-    padding: 16px;
+    padding: 12px;
     border: none;
     border-radius: 4px;
     font-weight: 700;
-    font-size: 1.05rem;
+    font-size: 1rem;
     cursor: pointer;
     transition:
         background 0.2s,
@@ -347,38 +358,58 @@
     font-style: italic;
     text-align: center;
     margin-top: 24px;
+    font-size: 0.9rem;
 }
 
 .customizer-matched-grid {
     flex: 1;
     overflow-y: auto;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-    gap: 16px;
-    padding: 16px;
+    /* Сделал карточки готовых букетов поменьше */
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
+    padding: 12px;
     background: #fafafc;
 }
 
 .customizer-matched-grid .bouquet-card {
     min-width: 0;
-    padding: 12px;
+    padding: 10px;
+    background: #fff;
+    border: 1px solid #e0e0eb;
+    border-radius: 6px;
+    text-align: center;
+    transition: transform 0.2s;
+}
+
+.customizer-matched-grid .bouquet-card:hover {
+    transform: translateY(-2px);
+    border-color: var(--color-blue);
 }
 
 .customizer-matched-grid .bouquet-card img {
-    height: 140px;
+    height: 100px;
+    width: 100%;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-bottom: 8px;
 }
 
 .customizer-matched-grid .bouquet-card h3 {
-    font-size: 1rem;
+    font-size: 0.85rem;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .customizer-match-hint {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     font-weight: 700;
     color: var(--color-blue);
-    margin-top: 8px;
+    margin-top: 6px;
     background: rgba(242, 96, 118, 0.1);
-    padding: 4px 8px;
+    padding: 4px 6px;
     border-radius: 4px;
     display: inline-block;
 }

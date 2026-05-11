@@ -166,9 +166,9 @@ const OrderHistory = () => {
                         >
                             <p>
                                 <strong>Адрес доставки:</strong>{" "}
-                                {selectedOrder.deliveryAddress?.city},{" "}
-                                {selectedOrder.deliveryAddress?.street}, д.{" "}
-                                {selectedOrder.deliveryAddress?.house}
+                                {selectedOrder.address?.city},{" "}
+                                {selectedOrder.address?.street}, д.{" "}
+                                {selectedOrder.address?.house}
                             </p>
                             <p>
                                 <strong>Дата доставки:</strong>{" "}

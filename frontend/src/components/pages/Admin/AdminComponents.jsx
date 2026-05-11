@@ -1,13 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
+import { AppContext } from "../../../App";
+import api from "../../../api/axios";
 import AdminModal from "../../admin/AdminModal";
 
-const AdminComponents = ({
-    components,
-    setComponents,
-    componentCategories,
-    componentPrices,
-    setComponentPrices,
-}) => {
+const AdminComponents = () => {
+    // Я беру управление данными в свои руки
+    const { adminData, publicData, fetchAdminData } = useContext(AppContext);
+
+    const components = adminData.allComponents || [];
+    const componentCategories = publicData.categories || [];
+
     const [selectedComponent, setSelectedComponent] = useState(null);
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isPricesOpen, setIsPricesOpen] = useState(false);
@@ -15,28 +17,43 @@ const AdminComponents = ({
     const [isConfirmPriceDeleteOpen, setIsConfirmPriceDeleteOpen] =
         useState(null);
 
-    // Стейт для редактирования (чтобы не мутировать оригинал до сохранения)
     const [editData, setEditData] = useState({});
 
-    // Стейт для создания нового компонента
+    // Поле imageFile для отправки на бэкенд
     const [newComp, setNewComp] = useState({
         name: "",
         description: "",
         category_id: "",
         image_url: "",
+        imageFile: null,
         unit: "шт",
         initial_price: "",
     });
 
-    // Стейт для добавления новой цены в историю
     const [newPriceVal, setNewPriceVal] = useState("");
 
-    // Подтягиваем данные при открытии модалки редактирования
     useEffect(() => {
         if (selectedComponent) {
             setEditData({ ...selectedComponent });
         }
     }, [selectedComponent]);
+
+    // Моя заглушка. Никто не увидит пустой экран, пока я не загружу данные.
+    if (!components || components.length === 0) {
+        return (
+            <div className="admin-bouquets-container">
+                <div className="admin-dashboard-header">
+                    <h2>Я провожу инвентаризацию склада. Стой и жди, Лиля.</h2>
+                </div>
+            </div>
+        );
+    }
+
+    const getImageUrl = (url) => {
+        if (!url) return "";
+        if (url.startsWith("http") || url.startsWith("data:")) return url;
+        return `/uploads/${url}`;
+    };
 
     // ==========================================
     // ЛОГИКА СОЗДАНИЯ КОМПОНЕНТА
@@ -46,12 +63,16 @@ const AdminComponents = ({
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () =>
-                setNewComp((prev) => ({ ...prev, image_url: reader.result }));
+                setNewComp((prev) => ({
+                    ...prev,
+                    image_url: reader.result,
+                    imageFile: file,
+                }));
             reader.readAsDataURL(file);
         }
     };
 
-    const handleCreateComponent = (e) => {
+    const handleCreateComponent = async (e) => {
         e.preventDefault();
         if (!newComp.name || !newComp.category_id || !newComp.initial_price) {
             alert(
@@ -60,46 +81,34 @@ const AdminComponents = ({
             return;
         }
 
-        const newCompId =
-            components.length > 0
-                ? Math.max(...components.map((c) => c.component_id)) + 1
-                : 1;
+        try {
+            const formData = new FormData();
+            formData.append("name", newComp.name);
+            formData.append("categoryId", newComp.category_id);
+            formData.append("unit", newComp.unit);
+            formData.append("price", newComp.initial_price);
+            if (newComp.description)
+                formData.append("description", newComp.description);
+            if (newComp.imageFile) formData.append("image", newComp.imageFile);
 
-        const componentToAdd = {
-            component_id: newCompId,
-            name: newComp.name,
-            description: newComp.description,
-            category_id: parseInt(newComp.category_id),
-            image_url: newComp.image_url,
-            unit: newComp.unit,
-            created_at: new Date().toISOString(),
-            deleted_at: null,
-        };
+            await api.post("/admin/components", formData);
+            await fetchAdminData();
 
-        const newPriceId =
-            componentPrices.length > 0
-                ? Math.max(...componentPrices.map((p) => p.price_id)) + 1
-                : 1;
-        const priceToAdd = {
-            price_id: newPriceId,
-            component_id: newCompId,
-            price: parseFloat(newComp.initial_price),
-            start_date: new Date().toISOString().split("T")[0],
-            end_date: "2099-12-31",
-        };
-
-        setComponents([...components, componentToAdd]);
-        setComponentPrices([...componentPrices, priceToAdd]);
-
-        setIsAddOpen(false);
-        setNewComp({
-            name: "",
-            description: "",
-            category_id: "",
-            image_url: "",
-            unit: "шт",
-            initial_price: "",
-        });
+            setIsAddOpen(false);
+            setNewComp({
+                name: "",
+                description: "",
+                category_id: "",
+                image_url: "",
+                imageFile: null,
+                unit: "шт",
+                initial_price: "",
+            });
+            alert("Новый компонент зафиксирован в базе.");
+        } catch (error) {
+            console.error(error);
+            alert("Ошибка сети. Успокойся, проверим консоль.");
+        }
     };
 
     // ==========================================
@@ -110,106 +119,137 @@ const AdminComponents = ({
         if (file) {
             const reader = new FileReader();
             reader.onloadend = () =>
-                setEditData((prev) => ({ ...prev, image_url: reader.result }));
+                setEditData((prev) => ({
+                    ...prev,
+                    image_url: reader.result,
+                    imageFile: file,
+                }));
             reader.readAsDataURL(file);
         }
     };
 
-    const handleSaveEdit = () => {
-        if (!editData.name || !editData.category_id) {
+    const handleSaveEdit = async () => {
+        if (!editData.name || (!editData.category_id && !editData.categoryId)) {
             alert("Имя и категория не могут быть пустыми.");
             return;
         }
-        setComponents((prev) =>
-            prev.map((c) =>
-                c.component_id === editData.component_id
-                    ? {
-                          ...editData,
-                          category_id: parseInt(editData.category_id),
-                      }
-                    : c,
-            ),
-        );
-        setSelectedComponent({
-            ...editData,
-            category_id: parseInt(editData.category_id),
-        });
-        alert("Компонент жестко обновлен. Твои изменения сохранены.");
-    };
 
-    const toggleDeleteStatus = (compId) => {
-        setComponents((prev) =>
-            prev.map((c) =>
-                c.component_id === compId
-                    ? {
-                          ...c,
-                          deleted_at: c.deleted_at
-                              ? null
-                              : new Date().toISOString(),
-                      }
-                    : c,
-            ),
-        );
-        if (selectedComponent && selectedComponent.component_id === compId) {
-            setEditData((prev) => ({
-                ...prev,
-                deleted_at: prev.deleted_at ? null : new Date().toISOString(),
-            }));
+        const compId = editData.componentId || editData.component_id;
+        try {
+            const formData = new FormData();
+            formData.append("name", editData.name);
+            formData.append(
+                "categoryId",
+                editData.category_id || editData.categoryId,
+            );
+            formData.append("unit", editData.unit);
+            if (editData.description)
+                formData.append("description", editData.description);
+            if (editData.imageFile)
+                formData.append("image", editData.imageFile);
+
+            await api.put(`/admin/components/${compId}`, formData);
+            await fetchAdminData();
+            alert("Компонент жестко обновлен. Твои изменения сохранены.");
+        } catch (error) {
+            console.error(error);
+            alert("Ошибка сохранения.");
         }
     };
 
-    const confirmHardDelete = () => {
-        setComponents((prev) =>
-            prev.filter((c) => c.component_id !== isConfirmDeleteOpen),
-        );
-        if (
-            selectedComponent &&
-            selectedComponent.component_id === isConfirmDeleteOpen
-        ) {
+    const toggleDeleteStatus = async (compId, isDeleted) => {
+        try {
+            await api.put(`/admin/components/${compId}`, {
+                isDeleted: !isDeleted,
+            });
+            await fetchAdminData();
+
+            if (
+                selectedComponent &&
+                (selectedComponent.componentId ||
+                    selectedComponent.component_id) === compId
+            ) {
+                setEditData((prev) => ({
+                    ...prev,
+                    deletedAt: isDeleted ? null : new Date().toISOString(),
+                    deleted_at: isDeleted ? null : new Date().toISOString(),
+                }));
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
+    const confirmSoftDelete = async () => {
+        try {
+            await api.delete(`/admin/components/${isConfirmDeleteOpen}`);
+            await fetchAdminData();
+            setIsConfirmDeleteOpen(null);
             setSelectedComponent(null);
+        } catch (error) {
+            console.error(error);
         }
-        setIsConfirmDeleteOpen(null);
     };
 
     // ==========================================
     // ЛОГИКА ИСТОРИИ ЦЕН
     // ==========================================
-    const handleAddPrice = () => {
+    const handleAddPrice = async () => {
         if (!newPriceVal || isNaN(newPriceVal) || newPriceVal <= 0) {
             alert("Введи корректную цену.");
             return;
         }
-        const newPriceId =
-            componentPrices.length > 0
-                ? Math.max(...componentPrices.map((p) => p.price_id)) + 1
-                : 1;
-        setComponentPrices([
-            ...componentPrices,
-            {
-                price_id: newPriceId,
-                component_id: selectedComponent.component_id,
+
+        const compId =
+            selectedComponent.componentId || selectedComponent.component_id;
+        try {
+            await api.post(`/admin/components/${compId}/prices`, {
                 price: parseFloat(newPriceVal),
-                start_date: new Date().toISOString().split("T")[0],
-                end_date: "2099-12-31",
-            },
-        ]);
-        setNewPriceVal("");
+            });
+            await fetchAdminData();
+            setNewPriceVal("");
+        } catch (error) {
+            console.error(error);
+            alert("Ошибка при добавлении цены.");
+        }
     };
 
-    const confirmDeletePrice = () => {
-        setComponentPrices((prev) =>
-            prev.filter((p) => p.price_id !== isConfirmPriceDeleteOpen),
+    const confirmDeletePrice = async () => {
+        try {
+            await api.delete(
+                `/admin/components/prices/${isConfirmPriceDeleteOpen}`,
+            );
+            await fetchAdminData();
+            setIsConfirmPriceDeleteOpen(null);
+        } catch (error) {
+            console.error(error);
+            alert("Ошибка при удалении записи цены.");
+        }
+    };
+
+    // Вычисляем текущую активную цену из массива prices
+    const getCurrentPrice = (comp) => {
+        if (!comp.prices || comp.prices.length === 0) return 0;
+        const today = new Date();
+        const activePrice = comp.prices.find(
+            (p) =>
+                new Date(p.endDate) >= today && new Date(p.startDate) <= today,
         );
-        setIsConfirmPriceDeleteOpen(null);
+        return activePrice ? activePrice.price : comp.prices[0].price;
     };
 
-    // Вычисляем текущую цену для таблицы
-    const getCurrentPrice = (compId) => {
-        const prices = componentPrices.filter((p) => p.component_id === compId);
-        if (prices.length === 0) return 0;
-        // Берем последнюю добавленную цену (упрощенно)
-        return prices[prices.length - 1].price;
-    };
+    // Актуальные цены выбранного компонента (обновляются вместе с глобальным стейтом)
+    const selectedCompInDb = selectedComponent
+        ? components.find(
+              (c) =>
+                  (c.componentId || c.component_id) ===
+                  (selectedComponent.componentId ||
+                      selectedComponent.component_id),
+          )
+        : null;
+    const selectedCompPrices = selectedCompInDb
+        ? selectedCompInDb.prices || []
+        : [];
 
     return (
         <div className="admin-bouquets-container">
@@ -237,23 +277,30 @@ const AdminComponents = ({
                 </thead>
                 <tbody>
                     {components.map((c) => {
+                        const compId = c.componentId || c.component_id;
+                        const catId = c.categoryId || c.category_id;
+                        const isDeleted = !!(c.deletedAt || c.deleted_at);
                         const category = componentCategories.find(
-                            (cat) => cat.category_id === c.category_id,
+                            (cat) =>
+                                (cat.categoryId || cat.category_id) === catId,
                         );
+
                         return (
                             <tr
-                                key={c.component_id}
+                                key={compId}
                                 className={
-                                    c.deleted_at
+                                    isDeleted
                                         ? "admin-bouquets-row-deleted"
                                         : ""
                                 }
                             >
-                                <td>{c.component_id}</td>
+                                <td>{compId}</td>
                                 <td>
-                                    {c.image_url ? (
+                                    {c.imageUrl || c.image_url ? (
                                         <img
-                                            src={c.image_url}
+                                            src={getImageUrl(
+                                                c.imageUrl || c.image_url,
+                                            )}
                                             alt="img"
                                             className="admin-bouquets-preview"
                                         />
@@ -269,14 +316,17 @@ const AdminComponents = ({
                                 </td>
                                 <td>{category ? category.name : "—"}</td>
                                 <td>
-                                    {getCurrentPrice(c.component_id)} ₽/{c.unit}
+                                    {getCurrentPrice(c)} ₽/{c.unit}
                                 </td>
                                 <td>
                                     <input
                                         type="checkbox"
-                                        checked={!!c.deleted_at}
+                                        checked={isDeleted}
                                         onChange={() =>
-                                            toggleDeleteStatus(c.component_id)
+                                            toggleDeleteStatus(
+                                                compId,
+                                                isDeleted,
+                                            )
                                         }
                                     />
                                 </td>
@@ -284,12 +334,10 @@ const AdminComponents = ({
                                     <button
                                         className="admin-bouquets-btn-delete"
                                         onClick={() =>
-                                            setIsConfirmDeleteOpen(
-                                                c.component_id,
-                                            )
+                                            setIsConfirmDeleteOpen(compId)
                                         }
                                     >
-                                        Уничтожить
+                                        Списать
                                     </button>
                                 </td>
                             </tr>
@@ -339,8 +387,14 @@ const AdminComponents = ({
                                     <option value="">-- Выбери --</option>
                                     {componentCategories.map((cat) => (
                                         <option
-                                            key={cat.category_id}
-                                            value={cat.category_id}
+                                            key={
+                                                cat.categoryId ||
+                                                cat.category_id
+                                            }
+                                            value={
+                                                cat.categoryId ||
+                                                cat.category_id
+                                            }
                                         >
                                             {cat.name}
                                         </option>
@@ -427,7 +481,7 @@ const AdminComponents = ({
             {/* МОДАЛКА: РЕДАКТИРОВАНИЕ КОМПОНЕНТА */}
             {selectedComponent && (
                 <AdminModal
-                    title={`Редактор: ${selectedComponent.name}`}
+                    title={`Редактор: ${editData.name}`}
                     onClose={() => setSelectedComponent(null)}
                 >
                     <div className="admin-bouquets-form">
@@ -448,7 +502,11 @@ const AdminComponents = ({
                             <div className="admin-form-col">
                                 <label>Категория:</label>
                                 <select
-                                    value={editData.category_id || ""}
+                                    value={
+                                        editData.category_id ||
+                                        editData.categoryId ||
+                                        ""
+                                    }
                                     onChange={(e) =>
                                         setEditData({
                                             ...editData,
@@ -459,8 +517,14 @@ const AdminComponents = ({
                                 >
                                     {componentCategories.map((cat) => (
                                         <option
-                                            key={cat.category_id}
-                                            value={cat.category_id}
+                                            key={
+                                                cat.categoryId ||
+                                                cat.category_id
+                                            }
+                                            value={
+                                                cat.categoryId ||
+                                                cat.category_id
+                                            }
                                         >
                                             {cat.name}
                                         </option>
@@ -493,10 +557,20 @@ const AdminComponents = ({
                                 >
                                     <input
                                         type="checkbox"
-                                        checked={!!editData.deleted_at}
+                                        checked={
+                                            !!(
+                                                editData.deletedAt ||
+                                                editData.deleted_at
+                                            )
+                                        }
                                         onChange={() =>
                                             toggleDeleteStatus(
-                                                editData.component_id,
+                                                editData.componentId ||
+                                                    editData.component_id,
+                                                !!(
+                                                    editData.deletedAt ||
+                                                    editData.deleted_at
+                                                ),
                                             )
                                         }
                                         style={{ marginRight: "8px" }}
@@ -527,9 +601,11 @@ const AdminComponents = ({
                             style={{ marginTop: "16px" }}
                         >
                             <label>Фотография компонента:</label>
-                            {editData.image_url && (
+                            {(editData.imageUrl || editData.image_url) && (
                                 <img
-                                    src={editData.image_url}
+                                    src={getImageUrl(
+                                        editData.imageUrl || editData.image_url,
+                                    )}
                                     alt="Текущее"
                                     className="admin-bouquets-preview-large"
                                     style={{
@@ -573,9 +649,9 @@ const AdminComponents = ({
             )}
 
             {/* ВЛОЖЕННАЯ МОДАЛКА: ИСТОРИЯ ЦЕН */}
-            {isPricesOpen && selectedComponent && (
+            {isPricesOpen && selectedCompInDb && (
                 <AdminModal
-                    title={`История цен: ${selectedComponent.name}`}
+                    title={`История цен: ${selectedCompInDb.name}`}
                     onClose={() => setIsPricesOpen(false)}
                 >
                     <div className="admin-add-price-box">
@@ -617,57 +693,59 @@ const AdminComponents = ({
                             </tr>
                         </thead>
                         <tbody>
-                            {componentPrices
-                                .filter(
-                                    (p) =>
-                                        p.component_id ===
-                                        selectedComponent.component_id,
-                                )
+                            {selectedCompPrices
                                 .sort(
                                     (a, b) =>
-                                        new Date(b.start_date) -
-                                        new Date(a.start_date),
+                                        new Date(b.startDate) -
+                                        new Date(a.startDate),
                                 )
-                                .map((p) => (
-                                    <tr key={p.price_id}>
-                                        <td>{p.price_id}</td>
-                                        <td
-                                            style={{
-                                                fontWeight: "bold",
-                                                color: "var(--color-blue)",
-                                            }}
-                                        >
-                                            {p.price} ₽
-                                        </td>
-                                        <td>{p.start_date}</td>
-                                        <td>
-                                            <button
-                                                className="admin-bouquets-icon-btn"
-                                                onClick={() =>
-                                                    setIsConfirmPriceDeleteOpen(
-                                                        p.price_id,
-                                                    )
-                                                }
+                                .map((p) => {
+                                    const pId = p.priceId || p.price_id;
+                                    return (
+                                        <tr key={pId}>
+                                            <td>{pId}</td>
+                                            <td
+                                                style={{
+                                                    fontWeight: "bold",
+                                                    color: "var(--color-blue)",
+                                                }}
                                             >
-                                                <svg
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    width="16"
-                                                    height="16"
-                                                    fill="currentColor"
-                                                    viewBox="0 0 16 16"
+                                                {p.price} ₽
+                                            </td>
+                                            <td>
+                                                {p.startDate
+                                                    ? p.startDate.split("T")[0]
+                                                    : ""}
+                                            </td>
+                                            <td>
+                                                <button
+                                                    className="admin-bouquets-icon-btn"
+                                                    onClick={() =>
+                                                        setIsConfirmPriceDeleteOpen(
+                                                            pId,
+                                                        )
+                                                    }
                                                 >
-                                                    <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5M8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5m3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0" />
-                                                </svg>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                ))}
+                                                    <svg
+                                                        xmlns="http://www.w3.org/2000/svg"
+                                                        width="16"
+                                                        height="16"
+                                                        fill="currentColor"
+                                                        viewBox="0 0 16 16"
+                                                    >
+                                                        <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5M8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5m3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0" />
+                                                    </svg>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                         </tbody>
                     </table>
                 </AdminModal>
             )}
 
-            {/* МОДАЛКА: ПОДТВЕРЖДЕНИЕ УДАЛЕНИЯ КОМПОНЕНТА */}
+            {/* МОДАЛКА: ПОДТВЕРЖДЕНИЕ СМЯГЧЕННОГО УДАЛЕНИЯ КОМПОНЕНТА */}
             {isConfirmDeleteOpen !== null && (
                 <AdminModal
                     title="Ты уверена, Лили?"
@@ -675,15 +753,15 @@ const AdminComponents = ({
                 >
                     <div className="admin-bouquets-confirm">
                         <p>
-                            Это действие уничтожит компонент навсегда. Я
-                            предупредил.
+                            Это действие спишет компонент и переведет его в
+                            архив.
                         </p>
                         <div className="admin-bouquets-modal-controls">
                             <button
                                 className="admin-bouquets-btn-delete"
-                                onClick={confirmHardDelete}
+                                onClick={confirmSoftDelete}
                             >
-                                Да, уничтожить
+                                Да, списать
                             </button>
                             <button
                                 className="admin-bouquets-btn-secondary"

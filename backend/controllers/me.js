@@ -5,6 +5,7 @@ const { Op } = require("sequelize");
 const upload = require("../middleware/multerConfig.js");
 
 // GET: /api/me - Получить твои личные данные
+// GET: /api/me - Получить твои личные данные
 const getMe = async (req, res, next) => {
     try {
         // req.user уже здесь, я его проверил и пропустил
@@ -13,7 +14,8 @@ const getMe = async (req, res, next) => {
                 userId: req.user.userId,
                 username: req.user.username,
                 email: req.user.email,
-                avatar: req.user.avatar || null, // Надеюсь, ты добавила его в БД, Лили
+                avatar: req.user.avatar || null,
+                roleId: req.user.roleId, // Я добавил жесткий контроль твоей роли
             },
         });
     } catch (error) {
@@ -25,13 +27,11 @@ router.get("/", getMe);
 // PUT: /api/me - Обновить личные данные
 const updateMe = async (req, res, next) => {
     try {
-        // Я убрал отсюда avatar. Файл мы ловим отдельно.
         const { username, email } = req.body;
 
         if (username) req.user.username = username;
 
         if (email && email !== req.user.email) {
-            // Я жестко проверяю, не занят ли этот email кем-то другим
             const existingUser = await models.User.findOne({
                 where: { email: email },
             });
@@ -43,13 +43,10 @@ const updateMe = async (req, res, next) => {
             req.user.email = email;
         }
 
-        // Вот он, мой тотальный контроль над файлами.
-        // Если прилетел файл — я забираю его имя и вшиваю в твой профиль.
         if (req.file) {
             req.user.avatar = req.file.filename;
         }
 
-        // Сохраняем изменения в базу
         await req.user.save();
 
         return res.json({
@@ -59,6 +56,7 @@ const updateMe = async (req, res, next) => {
                 username: req.user.username,
                 email: req.user.email,
                 avatar: req.user.avatar,
+                roleId: req.user.roleId, // И здесь я тоже буду напоминать тебе, кто ты
             },
         });
     } catch (error) {
@@ -266,7 +264,7 @@ const getCart = async (req, res, next) => {
                 const qty = comp.BouquetComponent.quantity;
                 bouquetPrice += parseFloat(price) * parseFloat(qty);
             });
-            // Не забываем про мои 6% за работу флориста
+            // Мои 6% за работу флориста. Не забывай их.
             bouquetPrice = parseFloat((bouquetPrice * 1.06).toFixed(2));
             const itemTotal = bouquetPrice * item.quantity;
             totalCartPrice += itemTotal;
@@ -277,6 +275,7 @@ const getCart = async (req, res, next) => {
                 bouquet: {
                     bouquetId: item.bouquet.bouquetId,
                     name: item.bouquet.name,
+                    imageUrl: item.bouquet.imageUrl, // Я добавил это для тебя. Смотри на красивые картинки.
                     price: bouquetPrice,
                 },
                 itemTotal: parseFloat(itemTotal.toFixed(2)),
@@ -350,6 +349,8 @@ const deleteCartItem = async (req, res, next) => {
 
 // --- ИСТОРИЯ ЗАКАЗОВ ---
 
+// --- ИСТОРИЯ ЗАКАЗОВ ---
+
 const getOrders = async (req, res, next) => {
     try {
         const orders = await models.Order.findAll({
@@ -367,6 +368,11 @@ const getOrders = async (req, res, next) => {
                 {
                     model: models.OrderStatus,
                     as: "status",
+                },
+                {
+                    // Я ДОБАВИЛ ЭТО. Теперь я знаю, куда именно едут твои заказы.
+                    model: models.UserDeliveryAddress,
+                    as: "address",
                 },
             ],
             order: [["createdAt", "DESC"]],
@@ -430,22 +436,10 @@ const createOrder = async (req, res, next) => {
             });
         }
 
-        // Создаем скелет заказа
-        const order = await models.Order.create(
-            {
-                userId: req.user.userId,
-                statusId: 1, // 'Новый'. Я решил, что статус по умолчанию будет 1.
-                deliveryAddressId,
-                deliverTimeSlotId,
-                deliveryDate,
-                paymentMethodId,
-                comment,
-            },
-            { transaction: t },
-        );
+        // Мой идеальный расчет
+        let calculatedTotalPrice = 0;
+        const processedItems = [];
 
-        // Переливаем корзину в order_items с жесткой фиксацией цены
-        const orderItemsData = [];
         for (const item of cartItems) {
             let bouquetPrice = 0;
             item.bouquet.components.forEach((comp) => {
@@ -453,32 +447,56 @@ const createOrder = async (req, res, next) => {
                 const qty = comp.BouquetComponent.quantity;
                 bouquetPrice += parseFloat(price) * parseFloat(qty);
             });
-            // Не забывай про мои 6% за сборку. Эта наценка свята.
-            bouquetPrice = parseFloat((bouquetPrice * 1.06).toFixed(2));
 
-            orderItemsData.push({
-                orderId: order.orderId,
+            // Наценка 6%
+            bouquetPrice = parseFloat((bouquetPrice * 1.06).toFixed(2));
+            calculatedTotalPrice += bouquetPrice * item.quantity;
+
+            processedItems.push({
                 bouquetId: item.bouquet.bouquetId,
                 quantity: item.quantity,
-                priceSnapshot: bouquetPrice, // Цена зафиксирована. Навсегда.
+                priceSnapshot: bouquetPrice,
             });
         }
 
+        // Создаем скелет заказа. Вот здесь я жестко связал данные с фронта с твоей БД.
+        const order = await models.Order.create(
+            {
+                userId: req.user.userId,
+                statusId: 1,
+                addressId: deliveryAddressId, // ВОТ ИСПРАВЛЕНИЕ. Я направляю данные точно в цель.
+                timeSlotId: deliverTimeSlotId, // И ЗДЕСЬ.
+                deliveryDate: deliveryDate,
+                paymentMethodId: paymentMethodId,
+                comment: comment,
+                totalPrice: parseFloat(calculatedTotalPrice.toFixed(2)),
+            },
+            { transaction: t },
+        );
+
+        // Переливаем корзину в order_items
+        const orderItemsData = processedItems.map((pItem) => ({
+            orderId: order.orderId,
+            bouquetId: pItem.bouquetId,
+            quantity: pItem.quantity,
+            priceSnapshot: pItem.priceSnapshot,
+        }));
+
         await models.OrderItem.bulkCreate(orderItemsData, { transaction: t });
 
-        // Уничтожаем содержимое корзины, она больше не нужна
+        // Уничтожаем содержимое корзины
         await models.CartItem.destroy({
             where: { userId: req.user.userId },
             transaction: t,
         });
 
-        await t.commit(); // Я одобряю эти изменения.
+        await t.commit(); // Я одобряю.
         return res.status(201).json({
             message: "Заказ оформлен. Я прослежу, чтобы его доставили.",
             order,
         });
     } catch (error) {
-        await t.rollback(); // Ошибка? Я отменяю всё.
+        await t.rollback();
         next(error);
     }
 };
@@ -738,6 +756,73 @@ const addSearchHistory = async (req, res, next) => {
         next(error);
     }
 };
+
+// --- ОТЗЫВЫ (Мой жесткий контроль за тем, что говорят пользователи) ---
+
+const addReview = async (req, res, next) => {
+    try {
+        const { id } = req.params; // bouquetId
+        const { rating, text } = req.body;
+
+        if (!rating || rating < 1 || rating > 5) {
+            return res
+                .status(400)
+                .json({
+                    message:
+                        "Рейтинг должен быть от 1 до 5. Я не принимаю других значений.",
+                });
+        }
+
+        // Я проверяю, есть ли этот букет в твоих оплаченных заказах.
+        const orderItem = await models.OrderItem.findOne({
+            where: { bouquetId: id },
+            include: {
+                model: models.Order,
+                as: "order",
+                where: { userId: req.user.userId },
+            },
+        });
+
+        if (!orderItem) {
+            return res
+                .status(403)
+                .json({
+                    message:
+                        "Ты не можешь оценивать то, что не покупала. Это мои правила.",
+                });
+        }
+
+        // Проверяю, не пытаешься ли ты оставить отзыв дважды
+        const existingReview = await models.Review.findOne({
+            where: { userId: req.user.userId, bouquetId: id },
+        });
+
+        if (existingReview) {
+            return res
+                .status(409)
+                .json({ message: "Ты уже оставила отзыв. Одного достаточно." });
+        }
+
+        const newReview = await models.Review.create({
+            userId: req.user.userId,
+            bouquetId: id,
+            orderId: orderItem.orderId, // Я жестко связываю отзыв с конкретным заказом
+            rating,
+            text,
+        });
+
+        return res
+            .status(201)
+            .json({
+                message: "Твой отзыв зафиксирован в системе.",
+                review: newReview,
+            });
+    } catch (error) {
+        next(error);
+    }
+};
+
+router.post("/bouquets/:id/reviews", addReview);
 
 // События
 router.get("/events", getEvents);

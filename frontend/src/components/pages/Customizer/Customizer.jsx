@@ -1,44 +1,48 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useContext, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { AppContext } from "../../../App";
+import api from "../../../api/axios";
 import "../../../styles/Customizer.css";
-import Header from "../../layout/Header";
 import AdminModal from "../../admin/AdminModal";
 
-const Customizer = ({
-    componentCategories = [],
-    components = [],
-    componentPrices = [],
-    bouquets = [],
-    bouquetComponents = [],
-    setBouquets,
-    setBouquetComponents,
-    users = [],
-    searchHistory = [],
-    setSearchHistory,
-}) => {
-    const [activeCategoryId, setActiveCategoryId] = useState(
-        componentCategories.length > 0
-            ? componentCategories[0].category_id
-            : null,
-    );
+const Customizer = () => {
+    const navigate = useNavigate();
 
+    // Я забираю данные из своего контекста. Никаких пропсов.
+    const { user, publicData, fetchMeData } = useContext(AppContext);
+    const { components, categories, bouquets } = publicData;
+
+    // Установка первой категории по умолчанию
+    const [activeCategoryId, setActiveCategoryId] = useState(null);
+    useEffect(() => {
+        if (categories.length > 0 && !activeCategoryId) {
+            setActiveCategoryId(categories[0].categoryId);
+        }
+    }, [categories, activeCategoryId]);
+
+    // Объект выбранных компонентов: { componentId: quantity }
     const [selectedComps, setSelectedComps] = useState({});
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [bouquetName, setBouquetName] = useState("");
     const [bouquetDesc, setBouquetDesc] = useState("");
 
-    const getCurrentPrice = (compId) => {
-        const prices = componentPrices.filter((p) => p.component_id === compId);
-        if (prices.length === 0) return 0;
-        return prices[prices.length - 1].price;
+    // Мой жесткий контроль путей для изображений
+    const getImageUrl = (url) => {
+        if (!url) return "";
+        if (url.startsWith("http") || url.startsWith("data:")) return url;
+        return `/uploads/${url}`;
     };
+
+    // --- ЛОГИКА ВЫБОРА ---
 
     const handleCheckboxToggle = (compId) => {
         setSelectedComps((prev) => {
             const newComps = { ...prev };
             if (newComps[compId]) {
-                delete newComps[compId];
+                delete newComps[compId]; // Если передумала - безжалостно удаляем
             } else {
-                newComps[compId] = 1;
+                newComps[compId] = 1; // Если выбрала - ставим 1 шт по умолчанию
             }
             return newComps;
         });
@@ -48,9 +52,10 @@ const Customizer = ({
         setSelectedComps((prev) => {
             const newComps = { ...prev };
             if (!newComps[compId]) return prev;
+
             const newQty = newComps[compId] + delta;
             if (newQty < 1) {
-                delete newComps[compId];
+                delete newComps[compId]; // Упало ниже 1? Удаляем из списка.
             } else {
                 newComps[compId] = newQty;
             }
@@ -58,142 +63,138 @@ const Customizer = ({
         });
     };
 
+    // --- ФИЛЬТРАЦИЯ И СОРТИРОВКА ---
+
     const activeComponents = components.filter(
-        (c) => c.category_id === activeCategoryId && !c.deleted_at,
+        (c) => c.categoryId === activeCategoryId,
     );
 
     const selectedComponentsList = components.filter(
-        (c) => selectedComps[c.component_id] > 0,
+        (c) => selectedComps[c.componentId] > 0,
     );
 
     const groupedSelectedComps = selectedComponentsList.reduce((acc, comp) => {
-        if (!acc[comp.category_id]) acc[comp.category_id] = [];
-        acc[comp.category_id].push(comp);
+        if (!acc[comp.categoryId]) acc[comp.categoryId] = [];
+        acc[comp.categoryId].push(comp);
         return acc;
     }, {});
+
+    // --- МОЙ ИДЕАЛЬНЫЙ РАСЧЕТ ---
 
     let totalBasePrice = 0;
     let totalSelectedCount = 0;
 
     selectedComponentsList.forEach((c) => {
-        const qty = selectedComps[c.component_id];
-        totalBasePrice += getCurrentPrice(c.component_id) * qty;
+        const qty = selectedComps[c.componentId];
+        totalBasePrice += c.price * qty;
         totalSelectedCount += qty;
     });
 
-    const finalPrice = Math.round(totalBasePrice * 1.06);
+    const finalPrice = Math.round(totalBasePrice * 1.06); // Мои 6%
+
+    // --- АЛГОРИТМ ПОИСКА ПОХОЖИХ БУКЕТОВ ---
 
     const matchedBouquets = useMemo(() => {
-        const selectedIds = selectedComponentsList.map((c) => c.component_id);
+        const selectedIds = selectedComponentsList.map((c) => c.componentId);
         if (selectedIds.length === 0) return [];
 
         const scores = bouquets
             .map((bq) => {
-                if (bq.is_custom !== 0 || bq.deleted_at) return null;
-
-                const bqComps = bouquetComponents.filter(
-                    (bc) => bc.bouquet_id === bq.bouquet_id,
-                );
+                const bqComps = bq.components || [];
                 let matchCount = 0;
 
+                // Считаем пересечения
                 bqComps.forEach((bc) => {
-                    if (selectedIds.includes(bc.component_id)) matchCount++;
+                    if (selectedIds.includes(bc.componentId)) matchCount++;
                 });
 
                 return { ...bq, matchCount };
             })
-            .filter(Boolean);
+            .filter((b) => b.matchCount > 0); // Оставляем только те, где есть хоть 1 совпадение
 
-        return scores
-            .sort((a, b) => b.matchCount - a.matchCount)
-            .filter((b) => b.matchCount > 0)
-            .slice(0, 4);
-    }, [selectedComps, bouquets, bouquetComponents, selectedComponentsList]);
+        // Сортируем по убыванию совпадений и берем топ-4
+        return scores.sort((a, b) => b.matchCount - a.matchCount).slice(0, 4);
+    }, [selectedComps, bouquets, selectedComponentsList]);
+
+    // --- СОХРАНЕНИЕ ---
 
     const handleNext = () => {
+        if (!user) {
+            alert(
+                "Я не позволю анониму собирать букеты. Авторизуйся немедленно.",
+            );
+            navigate("/login");
+            return;
+        }
         if (totalSelectedCount === 0) {
             alert(
-                "Ты не выбрала ни одного компонента. Я не позволю тебе идти дальше с пустыми руками, Лиля.",
+                "Ты не выбрала ни одного цветка. Я не позволю тебе идти дальше с пустыми руками, Лиля.",
             );
             return;
         }
         setIsModalOpen(true);
     };
 
-    const handleSaveBouquet = () => {
+    const handleSaveBouquet = async () => {
         if (!bouquetName.trim()) {
             alert("Дай букету имя, Лиля. Я не терплю безымянных вещей.");
             return;
         }
 
         if (!bouquetDesc.trim()) {
-            alert("Опиши букет. Я же сказал, флористу нужны твои указания.");
+            alert(
+                "Опиши букет. Флористу нужны мои четкие указания, которые ты ему передашь.",
+            );
             return;
         }
 
-        const newBouquetId =
-            bouquets.length > 0
-                ? Math.max(...bouquets.map((b) => b.bouquet_id)) + 1
-                : 1;
+        // Формирую идеальный массив для моего бэкенда
+        const componentsPayload = Object.entries(selectedComps).map(
+            ([id, qty]) => ({
+                componentId: parseInt(id),
+                quantity: qty,
+            }),
+        );
 
-        const customBouquet = {
-            bouquet_id: newBouquetId,
-            name: bouquetName.trim(),
-            description: bouquetDesc,
-            image_url: "",
-            created_at: new Date().toISOString(),
-            deleted_at: null,
-            is_custom: 1,
-        };
+        try {
+            await api.post("/me/custom-bouquets", {
+                name: bouquetName.trim(),
+                description: bouquetDesc.trim(),
+                components: componentsPayload,
+            });
 
-        const newComponents = selectedComponentsList.map((comp, index) => {
-            const newBcId =
-                bouquetComponents.length > 0
-                    ? Math.max(
-                          ...bouquetComponents.map(
-                              (bc) => bc.bouquet_component_id,
-                          ),
-                      ) +
-                      1 +
-                      index
-                    : 1 + index;
+            // Обновляю твои личные данные в контексте
+            fetchMeData();
 
-            return {
-                bouquet_component_id: newBcId,
-                component_id: comp.component_id,
-                bouquet_id: newBouquetId,
-                quantity: selectedComps[comp.component_id],
-            };
-        });
-
-        setBouquets([...bouquets, customBouquet]);
-        setBouquetComponents([...bouquetComponents, ...newComponents]);
-
-        setSelectedComps({});
-        setBouquetName("");
-        setBouquetDesc("");
-        setIsModalOpen(false);
-        alert("Букет жестко зафиксирован в базе. Твоя работа выполнена.");
+            setSelectedComps({});
+            setBouquetName("");
+            setBouquetDesc("");
+            setIsModalOpen(false);
+            alert(
+                "Букет жестко зафиксирован в твоем профиле. Твоя работа выполнена.",
+            );
+            navigate("/profile/custom-bouquets");
+        } catch (error) {
+            console.error(error);
+            alert("Произошла ошибка. Я разберусь с этим.");
+        }
     };
 
     return (
-        <div className="layout-wrapper">
-            <Header
-                users={users}
-                searchHistory={searchHistory}
-                setSearchHistory={setSearchHistory}
-            />
-            <main className="main-content">
+        <div className="layout-wrapper" style={{ padding: "24px 0" }}>
+            <main className="main-content" style={{ margin: "0 auto" }}>
                 <div className="customizer-wrapper">
+                    {/* ЛЕВАЯ ЧАСТЬ */}
                     <div className="customizer-main-left">
+                        {/* Панель выбора компонентов */}
                         <div className="customizer-components-panel">
                             <div className="customizer-nav-menu">
-                                {componentCategories.map((cat) => (
+                                {categories.map((cat) => (
                                     <button
-                                        key={cat.category_id}
-                                        className={`customizer-nav-btn ${activeCategoryId === cat.category_id ? "active" : ""}`}
+                                        key={cat.categoryId}
+                                        className={`customizer-nav-btn ${activeCategoryId === cat.categoryId ? "active" : ""}`}
                                         onClick={() =>
-                                            setActiveCategoryId(cat.category_id)
+                                            setActiveCategoryId(cat.categoryId)
                                         }
                                     >
                                         {cat.name}
@@ -204,27 +205,29 @@ const Customizer = ({
                             <div className="customizer-components-grid">
                                 {activeComponents.map((comp) => (
                                     <label
-                                        key={comp.component_id}
-                                        className={`customizer-comp-card ${selectedComps[comp.component_id] ? "selected" : ""}`}
+                                        key={comp.componentId}
+                                        className={`customizer-comp-card ${selectedComps[comp.componentId] ? "selected" : ""}`}
                                     >
                                         <input
                                             type="checkbox"
                                             className="customizer-hidden-checkbox"
                                             checked={
                                                 !!selectedComps[
-                                                    comp.component_id
+                                                    comp.componentId
                                                 ]
                                             }
                                             onChange={() =>
                                                 handleCheckboxToggle(
-                                                    comp.component_id,
+                                                    comp.componentId,
                                                 )
                                             }
                                         />
                                         <div className="customizer-comp-image">
-                                            {comp.image_url ? (
+                                            {comp.imageUrl ? (
                                                 <img
-                                                    src={comp.image_url}
+                                                    src={getImageUrl(
+                                                        comp.imageUrl,
+                                                    )}
                                                     alt={comp.name}
                                                 />
                                             ) : (
@@ -236,10 +239,7 @@ const Customizer = ({
                                                 {comp.name}
                                             </span>
                                             <span className="customizer-comp-price">
-                                                {getCurrentPrice(
-                                                    comp.component_id,
-                                                )}{" "}
-                                                ₽
+                                                {comp.price} ₽
                                             </span>
                                         </div>
                                     </label>
@@ -247,9 +247,10 @@ const Customizer = ({
                             </div>
                         </div>
 
+                        {/* Панель похожих букетов */}
                         <div className="customizer-matched-panel">
                             <h3 className="customizer-panel-title">
-                                Похожие готовые букеты из базы
+                                Похожие готовые букеты (Мои рекомендации)
                             </h3>
                             <div className="customizer-matched-grid">
                                 {matchedBouquets.length === 0 ? (
@@ -257,17 +258,24 @@ const Customizer = ({
                                         className="customizer-empty-text"
                                         style={{ gridColumn: "1 / -1" }}
                                     >
-                                        Пока ты ничего не выбрала или я не нашел
-                                        совпадений в базе.
+                                        Выбирай цветы, Лиля. Я покажу тебе
+                                        совпадения, когда ты начнешь
+                                        действовать.
                                     </p>
                                 ) : (
                                     matchedBouquets.map((bq) => (
                                         <div
-                                            key={bq.bouquet_id}
+                                            key={bq.bouquetId}
                                             className="bouquet-card"
+                                            onClick={() =>
+                                                navigate(
+                                                    `/bouquet/${bq.bouquetId}`,
+                                                )
+                                            }
+                                            style={{ cursor: "pointer" }}
                                         >
                                             <img
-                                                src={bq.image_url}
+                                                src={getImageUrl(bq.imageUrl)}
                                                 alt={bq.name}
                                             />
                                             <h3>{bq.name}</h3>
@@ -281,8 +289,11 @@ const Customizer = ({
                         </div>
                     </div>
 
+                    {/* ПРАВАЯ ЧАСТЬ */}
                     <div className="customizer-main-right">
-                        <h3 className="customizer-panel-title">Твой выбор</h3>
+                        <h3 className="customizer-panel-title">
+                            Твой выбор под моим контролем
+                        </h3>
                         <div className="customizer-selected-list">
                             {Object.keys(groupedSelectedComps).length === 0 ? (
                                 <p className="customizer-empty-text">
@@ -291,12 +302,11 @@ const Customizer = ({
                             ) : (
                                 Object.entries(groupedSelectedComps).map(
                                     ([catId, comps]) => {
-                                        const catName =
-                                            componentCategories.find(
-                                                (c) =>
-                                                    c.category_id ===
-                                                    parseInt(catId),
-                                            )?.name;
+                                        const catName = categories.find(
+                                            (c) =>
+                                                c.categoryId ===
+                                                parseInt(catId),
+                                        )?.name;
                                         return (
                                             <div
                                                 key={catId}
@@ -308,7 +318,7 @@ const Customizer = ({
                                                 <div className="customizer-cat-items">
                                                     {comps.map((c) => (
                                                         <div
-                                                            key={c.component_id}
+                                                            key={c.componentId}
                                                             className="customizer-selected-item"
                                                         >
                                                             <span className="customizer-item-name">
@@ -319,7 +329,7 @@ const Customizer = ({
                                                                     type="button"
                                                                     onClick={() =>
                                                                         handleQuantityChange(
-                                                                            c.component_id,
+                                                                            c.componentId,
                                                                             -1,
                                                                         )
                                                                     }
@@ -330,7 +340,7 @@ const Customizer = ({
                                                                     {
                                                                         selectedComps[
                                                                             c
-                                                                                .component_id
+                                                                                .componentId
                                                                         ]
                                                                     }
                                                                 </span>
@@ -338,7 +348,7 @@ const Customizer = ({
                                                                     type="button"
                                                                     onClick={() =>
                                                                         handleQuantityChange(
-                                                                            c.component_id,
+                                                                            c.componentId,
                                                                             1,
                                                                         )
                                                                     }
@@ -346,12 +356,10 @@ const Customizer = ({
                                                                     +
                                                                 </button>
                                                                 <span className="customizer-item-price">
-                                                                    {getCurrentPrice(
-                                                                        c.component_id,
-                                                                    ) *
+                                                                    {c.price *
                                                                         selectedComps[
                                                                             c
-                                                                                .component_id
+                                                                                .componentId
                                                                         ]}{" "}
                                                                     ₽
                                                                 </span>
@@ -385,16 +393,17 @@ const Customizer = ({
                                 className="customizer-save-btn"
                                 onClick={handleNext}
                             >
-                                Далее
+                                Сохранить букет
                             </button>
                         </div>
                     </div>
                 </div>
             </main>
 
+            {/* МОЯ МОДАЛКА */}
             {isModalOpen && (
                 <AdminModal
-                    title="Оформление композиции"
+                    title="Оформление твоей композиции"
                     onClose={() => setIsModalOpen(false)}
                 >
                     <div className="admin-bouquets-form">
@@ -419,7 +428,7 @@ const Customizer = ({
                             onClick={handleSaveBouquet}
                             style={{ marginTop: "16px" }}
                         >
-                            Сохранить мой букет
+                            Зафиксировать букет в базе
                         </button>
                     </div>
                 </AdminModal>

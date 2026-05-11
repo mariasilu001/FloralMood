@@ -1,137 +1,285 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useContext } from "react";
+import { AppContext } from "../../../App";
+import api from "../../../api/axios";
 
-const AdminTickets = ({ tickets, setTickets, ticketMessages, setTicketMessages, ticketSubjects, users }) => {
+const AdminTickets = () => {
+    // Я забрал управление. Никаких пропсов, только мой контекст.
+    const { user, adminData, publicData, fetchAdminData } =
+        useContext(AppContext);
+
+    const tickets = adminData.allTickets || [];
+    const ticketSubjects = publicData.ticketSubjects || [];
+
     const [selectedTicketId, setSelectedTicketId] = useState(null);
+    const [currentMessages, setCurrentMessages] = useState([]);
     const [replyText, setReplyText] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
 
-    const currentUserStr = localStorage.getItem("currentUser");
-    const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
+    // Я жестко фильтрую тикеты, оставляя только те, которые требуют твоего внимания
+    const activeTickets = tickets.filter(
+        (t) =>
+            t.isActive === true ||
+            t.isActive === 1 ||
+            t.is_active === 1 ||
+            t.status === "Открыт" ||
+            t.status === "open",
+    );
 
-    // Выбираем только активные тикеты, как ты и просила
-    const activeTickets = tickets.filter(t => t.is_active === 1 || t.is_active === true);
-    
-    const selectedTicket = tickets.find(t => t.ticket_id === selectedTicketId);
-    const currentMessages = ticketMessages.filter(m => m.ticket_id === selectedTicketId);
+    const selectedTicket = tickets.find(
+        (t) => (t.ticketId || t.ticket_id) === selectedTicketId,
+    );
 
-    const handleSendMessage = (e) => {
+    // Подгружаем переписку, когда ты выбираешь жертву
+    useEffect(() => {
+        const fetchMessages = async () => {
+            if (!selectedTicketId) {
+                setCurrentMessages([]);
+                return;
+            }
+            try {
+                const res = await api.get(
+                    `/admin/tickets/${selectedTicketId}/messages`,
+                );
+                setCurrentMessages(res.data.messages || []);
+            } catch (error) {
+                console.error("Ошибка загрузки переписки:", error);
+            }
+        };
+        fetchMessages();
+    }, [selectedTicketId]);
+
+    const handleSendMessage = async (e) => {
         e.preventDefault();
         if (!replyText.trim() || !selectedTicketId) return;
 
-        const newMessageId = ticketMessages.length > 0 ? Math.max(...ticketMessages.map(m => m.message_id)) + 1 : 1;
-        const newMessage = {
-            message_id: newMessageId,
-            ticket_id: selectedTicketId,
-            user_id: currentUser.userId, // От лица админа
-            text: replyText,
-            created_at: new Date().toISOString()
-        };
+        setIsLoading(true);
+        try {
+            // Я отправляю text, как мы и договаривались на бэкенде
+            await api.post(`/admin/tickets/${selectedTicketId}/messages`, {
+                text: replyText,
+            });
 
-        setTicketMessages([...ticketMessages, newMessage]);
-        setReplyText("");
+            // Мгновенно обновляю чат
+            const res = await api.get(
+                `/admin/tickets/${selectedTicketId}/messages`,
+            );
+            setCurrentMessages(res.data.messages || []);
+            setReplyText("");
+        } catch (error) {
+            console.error(error);
+            alert("Ошибка сети. Успокойся и проверь консоль.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const handleCloseTicket = () => {
+    const handleCloseTicket = async () => {
         if (!selectedTicketId) return;
-        
-        setTickets(prev => prev.map(t => 
-            t.ticket_id === selectedTicketId ? { ...t, is_active: 0 } : t
-        ));
-        
-        setSelectedTicketId(null);
-        alert("Жалоба безжалостно закрыта. Больше они нас не побеспокоят.");
+
+        try {
+            await api.put(`/admin/tickets/${selectedTicketId}/close`);
+            await fetchAdminData(); // Обновляю глобальный стейт, чтобы тикет исчез из активных
+            setSelectedTicketId(null);
+            alert("Жалоба безжалостно закрыта. Больше они нас не побеспокоят.");
+        } catch (error) {
+            console.error(error);
+            alert("Не удалось закрыть тикет. Я разберусь с этим позже.");
+        }
     };
 
-    const getUserName = (userId) => {
-        const u = users.find(u => u.user_id === userId);
-        return u ? u.username : "Неизвестный";
+    // Бэкенд уже собрал данные юзера в поле user, я использую это
+    const getUserName = (ticketUser) => {
+        return ticketUser ? ticketUser.username : "Неизвестный нытик";
     };
 
     const getSubjectName = (subId) => {
-        const s = ticketSubjects.find(s => s.subject_id === subId);
+        const s = ticketSubjects.find(
+            (s) => (s.subjectId || s.subject_id) === subId,
+        );
         return s ? s.name : "Без темы";
     };
+
+    if (!adminData.allTickets) {
+        return (
+            <div className="admin-tickets-container">
+                <h3 style={{ color: "var(--color-primary)", padding: "20px" }}>
+                    Я подгружаю данные базы. Терпение.
+                </h3>
+            </div>
+        );
+    }
 
     return (
         <div className="admin-tickets-container">
             <div className="admin-tickets-header">
                 <h2>Служба Заботы</h2>
-                <p className="admin-text-muted">Разберись с их недовольством.</p>
+                <p className="admin-text-muted">
+                   Система поддержки для клиентов
+                </p>
             </div>
 
             <div className="admin-tickets-layout">
-                {/* ЛЕВАЯ КОЛОНКА: Список тикетов */}
+                {/* ЛЕВАЯ КОЛОНКА */}
                 <div className="admin-tickets-sidebar">
-                    <h3 className="admin-subsection-title" style={{marginTop: 0}}>Активные обращения ({activeTickets.length})</h3>
+                    <h3
+                        className="admin-subsection-title"
+                        style={{ marginTop: 0 }}
+                    >
+                        Активные обращения ({activeTickets.length})
+                    </h3>
                     <div className="admin-tickets-list">
                         {activeTickets.length === 0 ? (
-                            <p className="admin-text-muted" style={{padding: '16px'}}>Нет активных проблем. Идеально.</p>
+                            <p
+                                className="admin-text-muted"
+                                style={{ padding: "16px" }}
+                            >
+                                Нет активных проблем.
+                            </p>
                         ) : (
-                            activeTickets.map(ticket => (
-                                <div 
-                                    key={ticket.ticket_id} 
-                                    className={`admin-ticket-card ${selectedTicketId === ticket.ticket_id ? 'admin-ticket-card--active' : ''}`}
-                                    onClick={() => setSelectedTicketId(ticket.ticket_id)}
-                                >
-                                    <div className="admin-ticket-card-header">
-                                        <span className="admin-ticket-subject">{getSubjectName(ticket.subject_id)}</span>
-                                        <span className="admin-ticket-date">{new Date(ticket.created_at).toLocaleDateString()}</span>
+                            activeTickets.map((ticket) => {
+                                const tId = ticket.ticketId || ticket.ticket_id;
+                                return (
+                                    <div
+                                        key={tId}
+                                        className={`admin-ticket-card ${selectedTicketId === tId ? "admin-ticket-card--active" : ""}`}
+                                        onClick={() => setSelectedTicketId(tId)}
+                                    >
+                                        <div className="admin-ticket-card-header">
+                                            <span className="admin-ticket-subject">
+                                                {getSubjectName(
+                                                    ticket.subjectId ||
+                                                        ticket.subject_id,
+                                                )}
+                                            </span>
+                                            <span className="admin-ticket-date">
+                                                {new Date(
+                                                    ticket.createdAt ||
+                                                        ticket.created_at,
+                                                ).toLocaleDateString("ru-RU")}
+                                            </span>
+                                        </div>
+                                        <div className="admin-ticket-card-user">
+                                            Клиент:{" "}
+                                            <strong>
+                                                {getUserName(ticket.user)}
+                                            </strong>
+                                        </div>
                                     </div>
-                                    <div className="admin-ticket-card-user">
-                                        Клиент: <strong>{getUserName(ticket.user_id)}</strong>
-                                    </div>
-                                </div>
-                            ))
+                                );
+                            })
                         )}
                     </div>
                 </div>
 
-                {/* ПРАВАЯ КОЛОНКА: Чат тикета */}
+                {/* ПРАВАЯ КОЛОНКА */}
                 <div className="admin-tickets-chat-area">
                     {selectedTicket ? (
                         <>
                             <div className="admin-chat-header">
                                 <div>
-                                    <h3>{getSubjectName(selectedTicket.subject_id)}</h3>
-                                    <p className="admin-text-muted" style={{fontSize: '0.85rem'}}>Клиент: {getUserName(selectedTicket.user_id)}</p>
+                                    <h3>
+                                        {getSubjectName(
+                                            selectedTicket.subjectId ||
+                                                selectedTicket.subject_id,
+                                        )}
+                                    </h3>
+                                    <p
+                                        className="admin-text-muted"
+                                        style={{ fontSize: "0.85rem" }}
+                                    >
+                                        Клиент:{" "}
+                                        {getUserName(selectedTicket.user)}
+                                    </p>
                                 </div>
-                                <button className="admin-bouquets-btn-delete" onClick={handleCloseTicket}>
+                                <button
+                                    className="admin-bouquets-btn-delete"
+                                    onClick={handleCloseTicket}
+                                >
                                     Закрыть обращение
                                 </button>
                             </div>
-                            
+
                             <div className="admin-chat-messages">
-                                {currentMessages.map(msg => {
-                                    const isAdmin = msg.user_id === currentUser.userId;
+                                {currentMessages.map((msg) => {
+                                    // Если userId сообщения совпадает с твоим (админа), значит это твой ответ
+                                    const isAdmin = msg.userId === user?.userId;
                                     return (
-                                        <div key={msg.message_id} className={`admin-chat-bubble-wrapper ${isAdmin ? 'admin-chat-bubble-wrapper--admin' : ''}`}>
-                                            <div className={`admin-chat-bubble ${isAdmin ? 'admin-chat-bubble--admin' : 'admin-chat-bubble--user'}`}>
+                                        <div
+                                            key={
+                                                msg.messageId || msg.message_id
+                                            }
+                                            className={`admin-chat-bubble-wrapper ${isAdmin ? "admin-chat-bubble-wrapper--admin" : ""}`}
+                                        >
+                                            <div
+                                                className={`admin-chat-bubble ${isAdmin ? "admin-chat-bubble--admin" : "admin-chat-bubble--user"}`}
+                                            >
                                                 <div className="admin-chat-bubble-author">
-                                                    {isAdmin ? "Я (Поддержка)" : getUserName(msg.user_id)}
+                                                    {isAdmin
+                                                        ? "Я (Поддержка)"
+                                                        : getUserName(
+                                                              selectedTicket.user,
+                                                          )}
                                                 </div>
-                                                <div className="admin-chat-bubble-text">{msg.text}</div>
+                                                <div className="admin-chat-bubble-text">
+                                                    {msg.text}
+                                                </div>
                                                 <div className="admin-chat-bubble-time">
-                                                    {new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                    {new Date(
+                                                        msg.createdAt ||
+                                                            msg.created_at,
+                                                    ).toLocaleTimeString(
+                                                        "ru-RU",
+                                                        {
+                                                            hour: "2-digit",
+                                                            minute: "2-digit",
+                                                        },
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
                                     );
                                 })}
-                                {currentMessages.length === 0 && <p className="admin-text-muted" style={{textAlign: 'center', marginTop: '40px'}}>Сообщений нет. Странно.</p>}
+                                {currentMessages.length === 0 && (
+                                    <p
+                                        className="admin-text-muted"
+                                        style={{
+                                            textAlign: "center",
+                                            marginTop: "40px",
+                                        }}
+                                    >
+                                        Сообщений нет.
+                                    </p>
+                                )}
                             </div>
 
-                            <form className="admin-chat-input-area" onSubmit={handleSendMessage}>
-                                <input 
-                                    type="text" 
-                                    placeholder="Напиши им жесткий и уверенный ответ..." 
+                            <form
+                                className="admin-chat-input-area"
+                                onSubmit={handleSendMessage}
+                            >
+                                <input
+                                    type="text"
+                                    placeholder="Напиши им жесткий и уверенный ответ..."
                                     value={replyText}
-                                    onChange={(e) => setReplyText(e.target.value)}
+                                    onChange={(e) =>
+                                        setReplyText(e.target.value)
+                                    }
+                                    disabled={isLoading}
                                 />
-                                <button type="submit" className="admin-bouquets-btn-primary" style={{width: 'auto', margin: 0}}>Отправить</button>
+                                <button
+                                    type="submit"
+                                    className="admin-bouquets-btn-primary"
+                                    style={{ width: "auto", margin: 0 }}
+                                    disabled={isLoading}
+                                >
+                                    Отправить
+                                </button>
                             </form>
                         </>
                     ) : (
                         <div className="admin-chat-empty">
-                            <p>Выбери тикет слева, чтобы я мог проанализировать их нытье.</p>
+                            <p>
+                                Выбери тикет слева
+                            </p>
                         </div>
                     )}
                 </div>

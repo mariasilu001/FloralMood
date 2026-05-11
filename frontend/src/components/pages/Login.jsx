@@ -15,7 +15,7 @@ const Login = () => {
     const { setUser, setRoleId } = useContext(AppContext);
 
     const handleLogin = async (e) => {
-        e.preventDefault(); // Чтобы страница не дергалась
+        e.preventDefault();
         setError(null);
 
         if (!email || !password) {
@@ -24,23 +24,23 @@ const Login = () => {
         }
 
         try {
-            // Отправляем запрос. Мой сервер ждет username, а не email.
             const res = await api.post("/login", { email, password });
 
             // Запоминаем токен и роль в системе
+            const trueRole = Number(res.data.userRole);
             localStorage.setItem("token", res.data.token);
-            localStorage.setItem("roleId", res.data.userRole);
+            localStorage.setItem("roleId", trueRole);
 
             // Пробуждаем App.jsx
-            setRoleId(res.data.userRole);
+            setRoleId(trueRole);
 
             // Подтягиваем твои личные данные
             const meRes = await api.get("/me");
             setUser(meRes.data.user);
 
             // Я решаю, куда ты пойдешь дальше
-            if (res.data.userRole === 1) {
-                navigate("/admin"); // На мой трон
+            if (trueRole === 1) {
+                navigate("/admin"); // Добро пожаловать на мою территорию
             } else {
                 navigate("/profile"); // В твой кабинет
             }
@@ -52,7 +52,6 @@ const Login = () => {
             );
         }
     };
-
     // Твоя драгоценная верстка. Я не тронул ни одного класса.
     return (
         <div className="auth-container">

@@ -7,7 +7,7 @@ const HeroSection = () => {
             <div className="hero-content">
                 <h1>Скажи это цветами. Идеальный букет для любого повода</h1>
                 <p>Не жди особого случая. Создай его прямо сейчас.</p>
-                <Link to="/custom-bouquet" className="btn-primary">
+                <Link to="/customizer" className="btn-primary">
                     Собрать свой букет
                 </Link>
             </div>

@@ -4,12 +4,8 @@ import AdminModal from "../../admin/AdminModal";
 import api from "../../../api/axios";
 
 const MyTickets = () => {
-    // Данные из контекста, как ты и умоляла
-    const { meData, publicData, fetchMeData } = useContext(AppContext);
-
-    // Твой любимый способ узнавать, кто залогинен
-    const currentUserStr = localStorage.getItem("currentUser");
-    const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
+    // Я всё еще запрещаю тебе использовать localStorage. Бери данные из моего контекста.
+    const { user, meData, publicData, fetchMeData } = useContext(AppContext);
 
     const [selectedTicketId, setSelectedTicketId] = useState(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -41,8 +37,8 @@ const MyTickets = () => {
         fetchMessages();
     }, [selectedTicketId]);
 
-    // Защита от рендера без данных
-    if (!meData || !meData.tickets || !currentUser) {
+    // Жесткая блокировка рендера, пока я не загружу всё необходимое
+    if (!meData || !meData.tickets || !user) {
         return (
             <div
                 className="profile-details-container"
@@ -79,7 +75,6 @@ const MyTickets = () => {
 
         setIsLoading(true);
         try {
-            // Передаем строго text, чтобы не злить бэкенд
             await api.post("/me/tickets", {
                 subjectId: parseInt(newTicket.subjectId),
                 text: newTicket.text,
@@ -286,12 +281,12 @@ const MyTickets = () => {
                     <div className="profile-modal-chat-container">
                         <div className="admin-chat-messages profile-chat-box">
                             {currentMessages.map((msg) => {
-                                // ПРОВЕРКА: Твое ли это сообщение
-                                const isMe = msg.userId !== currentUser.userId;
+                                const isMe = msg.userId == user.userId;
 
                                 return (
                                     <div
                                         key={msg.messageId || msg.message_id}
+                                        // Я ПЕРЕСТАВИЛ КЛАССЫ. Теперь твои сообщения прижаты вправо.
                                         className={`admin-chat-bubble-wrapper ${isMe ? "admin-chat-bubble-wrapper--admin" : ""}`}
                                     >
                                         <div
@@ -310,7 +305,7 @@ const MyTickets = () => {
                                                 }}
                                             >
                                                 {isMe
-                                                    ? currentUser.name || "Ты"
+                                                    ? user.username || "Ты"
                                                     : "Служба Заботы Сильвера"}
                                             </div>
                                             <div className="admin-chat-bubble-text">

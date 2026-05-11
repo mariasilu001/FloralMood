@@ -1,12 +1,13 @@
-import React from "react";
+import React, { useContext } from "react";
 import { Navigate, Outlet, NavLink, Link } from "react-router-dom";
+import { AppContext } from "../../App"; // Мой контроль
 
 const AdminLayout = () => {
-    const currentUserStr = localStorage.getItem("currentUser");
-    const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
+    // Я беру твою роль прямо из моего контекста
+    const { roleId } = useContext(AppContext);
 
-    // Мой жесткий контроль. Только Админ (roleId === 1) имеет право быть здесь.
-    if (!currentUser || currentUser.roleId !== 1) {
+    // Мой жесткий контроль. Только я и ты (с roleId === 1) имеем право быть здесь.
+    if (Number(roleId) !== 1) {
         return <Navigate to="/" replace />;
     }
 
@@ -22,6 +23,7 @@ const AdminLayout = () => {
                 <nav className="admin-layout-nav">
                     <NavLink
                         to="/admin"
+                        end
                         className={({ isActive }) =>
                             isActive
                                 ? "admin-layout-nav-link admin-layout-nav-link--active"

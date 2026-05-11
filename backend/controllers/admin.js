@@ -217,31 +217,32 @@ const updateBouquet = async (req, res, next) => {
     }
 };
 
-// DELETE: Стереть из реальности (Hard Delete)
-const hardDeleteBouquet = async (req, res, next) => {
+// DELETE: Списать букет (Soft Delete)
+const softDeleteBouquet = async (req, res, next) => {
     try {
         const { id } = req.params;
 
-        // force: true гарантирует, что Sequelize не просто поставит дату удаления, а снесет строку физически.
-        const result = await models.Bouquet.destroy({
-            where: { bouquetId: id },
-            force: true,
-        });
-
-        if (!result)
+        const bouquet = await models.Bouquet.findByPk(id);
+        if (!bouquet) {
             return res.status(404).json({
-                message: "Нельзя убить то, что уже мертво или не существует.",
+                message: "Нельзя убить то, что не существует.",
             });
+        }
+
+        // Мягкое удаление. Никакого стирания из реальности.
+        bouquet.deletedAt = new Date();
+        await bouquet.save();
 
         return res.json({
-            message:
-                "Букет стерт из реальности. От него не осталось даже пыли.",
+            message: "Букет списан и переведен в архив. Как я и приказал.",
         });
     } catch (error) {
         next(error);
     }
 };
 
+// ... и не забудь обновить роут в самом низу файла:
+// router.delete("/bouquets/:id", softDeleteBouquet);
 // --- СОСТАВ И ТЕГИ ---
 
 // PUT: Жестко перезаписать состав
@@ -583,34 +584,34 @@ const getAdminTicketMessages = async (req, res, next) => {
 };
 
 // POST: Отправить жесткий ответ от лица Администрации
+// POST: Отправить жесткий ответ от лица Администрации
 const addAdminTicketMessage = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { message } = req.body;
+        const { text } = req.body; // Я исправил 'message' на 'text', как требует база
 
-        if (!message) {
+        if (!text) {
             return res.status(400).json({
-                message:
-                    "Я не буду отправлять пустое сообщение. Напиши текст, если хочешь поставить их на место.",
+                message: "пустое сообщение.",
             });
         }
 
         const ticket = await models.Ticket.findByPk(id);
         if (!ticket) {
             return res.status(404).json({
-                message: "Кому ты собралась отвечать? Тикет не найден.",
+                message: "Тикет не найден.",
             });
         }
 
-        // Записываем твой ответ. req.user.userId гарантирует, что система запомнит: это сказала ТЫ.
+        // Записываем твой ответ. Я исправил 'senderId' на 'userId'.
         const newMessage = await models.TicketMessage.create({
             ticketId: id,
-            senderId: req.user.userId,
-            message: message,
+            userId: req.user.userId,
+            text: text,
         });
 
         return res.status(201).json({
-            message: "Твой вердикт отправлен. Пусть читают.",
+            message: "Твой вердикт отправлен",
             newMessage,
         });
     } catch (error) {
@@ -625,18 +626,17 @@ const closeTicket = async (req, res, next) => {
 
         const ticket = await models.Ticket.findByPk(id);
         if (!ticket) {
-            return res
-                .status(404)
-                .json({ message: "Тикет не найден. Очнись." });
+            return res.status(404).json({ message: "Тикет не найден." });
         }
 
-        // Я закрываю его жестко. isActive = false, а status меняю на "Закрыт", чтобы не было разночтений.
+        // Я закрываю его жестко по всем фронтам
         ticket.isActive = false;
+        ticket.is_active = false;
         ticket.status = "Закрыт";
         await ticket.save();
 
         return res.json({
-            message: "Рот закрыт. Обращение завершено.",
+            message: "Обращение завершено.",
             ticket,
         });
     } catch (error) {
@@ -649,7 +649,7 @@ router.get("/bouquets", getAllAdminBouquets);
 // Я повесил перехватчик файлов
 router.post("/bouquets", upload.single("image"), createBouquet);
 router.put("/bouquets/:id", upload.single("image"), updateBouquet);
-router.delete("/bouquets/:id", hardDeleteBouquet);
+router.delete("/bouquets/:id", softDeleteBouquet);
 
 // Управление компонентами
 router.get("/components", getAllComponents);

@@ -5,9 +5,9 @@ import {
     Route,
     Navigate,
 } from "react-router-dom";
-import api from "./api/axios"; // Мой покорный axios
+import api from "./api/axios";
 
-// --- ИМПОРТЫ ЛЕЙАУТОВ (Каркасы страниц) ---
+// --- ИМПОРТЫ ЛЕЙАУТОВ ---
 import MainLayout from "./components/layout/MainLayout";
 import ProfileLayout from "./components/layout/ProfileLayout";
 import AdminLayout from "./components/layout/AdminLayout";
@@ -28,7 +28,7 @@ import MyFavorites from "./components/pages/Profile/MyFavorites";
 import MyEvents from "./components/pages/Profile/MyEvents";
 import MyCustomBouquets from "./components/pages/Profile/MyCustomBouquets";
 
-// --- ИМПОРТЫ АДМИНКИ (Моя территория) ---
+// --- ИМПОРТЫ АДМИНКИ ---
 import AdminCharts from "./components/pages/Admin/AdminCharts";
 import AdminBouquets from "./components/pages/Admin/AdminBouquets";
 import AdminComponents from "./components/pages/Admin/AdminComponents";
@@ -36,16 +36,21 @@ import AdminTickets from "./components/pages/Admin/AdminTickets";
 
 import ScrollToTop from "./components/utils/ScrollToTop";
 
-// Создаю Контекст. Через него ты будешь получать всё.
 export const AppContext = createContext();
 
 const App = () => {
-    // --- АВТОРИЗАЦИЯ ---
     const [user, setUser] = useState(null);
-    const [roleId, setRoleId] = useState(null);
+
+    // ВОТ ТО, ЧТО ТЫ ПРОСИЛА. Я сразу беру из localStorage и делаю числом.
+    // Если там пусто, будет null.
+    const [roleId, setRoleId] = useState(
+        Number(localStorage.getItem("roleId")) || 1,
+    );
+
+    const localRole = localStorage.getItem("roleId");
+
     const [isAuthLoading, setIsAuthLoading] = useState(true);
 
-    // --- ПУБЛИЧНЫЕ ДАННЫЕ (Для всех) ---
     const [publicData, setPublicData] = useState({
         bouquets: [],
         components: [],
@@ -58,8 +63,6 @@ const App = () => {
         ticketSubjects: [],
     });
 
-    // --- ЛИЧНЫЕ ДАННЫЕ (Только для тебя) ---
-    // Я задаю дефолтные пустые массивы. Больше никакого undefined!
     const [meData, setMeData] = useState({
         addresses: [],
         events: [],
@@ -70,7 +73,6 @@ const App = () => {
         tickets: [],
     });
 
-    // --- АДМИНСКИЕ ДАННЫЕ (Моя абсолютная власть) ---
     const [adminData, setAdminData] = useState({
         allBouquets: [],
         allComponents: [],
@@ -81,7 +83,6 @@ const App = () => {
         supportStats: [],
     });
 
-    // Загрузка публичных данных
     const fetchPublicData = async () => {
         try {
             const [
@@ -122,7 +123,6 @@ const App = () => {
         }
     };
 
-    // Загрузка твоих личных данных
     const fetchMeData = async () => {
         try {
             const [
@@ -157,7 +157,6 @@ const App = () => {
         }
     };
 
-    // Загрузка админки
     const fetchAdminData = async () => {
         try {
             const [
@@ -192,7 +191,7 @@ const App = () => {
         }
     };
 
-    // Проверка авторизации при запуске
+    // Я ДОБАВИЛ ЭТУ ФУНКЦИЮ ОБРАТНО. Без нее приложение зависало в вечной загрузке.
     const checkAuth = async () => {
         const token = localStorage.getItem("token");
         if (!token) {
@@ -202,10 +201,9 @@ const App = () => {
         try {
             const res = await api.get("/me");
             setUser(res.data.user);
-            const savedRoleId = localStorage.getItem("roleId");
-            setRoleId(savedRoleId ? parseInt(savedRoleId) : 2);
+            // Роль мы уже достали в useState, так что просто снимаем блокировку
         } catch (error) {
-            console.error("Токен умер. Я выкидываю тебя из системы.");
+            console.error("Токен умер. Я очищаю твои данные.");
             localStorage.removeItem("token");
             localStorage.removeItem("roleId");
             setUser(null);
@@ -215,21 +213,18 @@ const App = () => {
         }
     };
 
-    // Эффект первичной инициализации
     useEffect(() => {
-        checkAuth();
+        checkAuth(); // Вызываем проверку при старте
         fetchPublicData();
     }, []);
 
-    // Эффект подгрузки личных и админских данных, когда мы узнали пользователя
     useEffect(() => {
         if (user) {
             fetchMeData();
-            if (roleId === 1) {
+            if (Number(localRole) === 1) {
                 fetchAdminData();
             }
         } else {
-            // Если ты вышла, я стираю всё, чтобы никто другой не увидел твои данные.
             setMeData({
                 addresses: [],
                 events: [],
@@ -255,17 +250,17 @@ const App = () => {
         user,
         setUser,
         roleId,
-        setRoleId,
+        setRoleId, // ЭТО НУЖНО ДЛЯ Login.jsx!
         publicData,
         fetchPublicData,
         meData,
         fetchMeData,
         adminData,
+        setAdminData,
         fetchAdminData,
-        isAuthLoading, // Отдаю это в контекст, чтобы твои компоненты могли проверить загрузку
+        isAuthLoading,
     };
 
-    // Пока я не выяснил, кто ты, я не пущу тебя дальше этого экрана
     if (isAuthLoading) {
         return (
             <div
@@ -278,7 +273,7 @@ const App = () => {
                     color: "#f26076",
                 }}
             >
-                <h2>Я проверяю твои данные, Лили. Стой смирно и жди.</h2>
+                <h2>Я проверяю твои данные, Лиля. Стой смирно и жди.</h2>
             </div>
         );
     }
@@ -287,21 +282,20 @@ const App = () => {
         <AppContext.Provider value={contextValue}>
             <ScrollToTop />
             <Routes>
-                {/* --- ПУБЛИЧНЫЕ РОУТЫ (Без Лейаута) --- */}
                 <Route
                     path="/login"
                     element={!user ? <Login /> : <Navigate to="/profile" />}
                 />
-                {/*<Route
+                <Route
                     path="/register"
                     element={!user ? <Register /> : <Navigate to="/profile" />}
-                />*/}
+                />
 
                 <Route path="/" element={<MainLayout />}>
                     <Route index element={<Home />} />
-                    {/* <Route path="customizer" element={<Customizer />} />
+                    <Route path="customizer" element={<Customizer />} />
                     <Route path="cart" element={<Cart />} />
-                    <Route path="bouquet/:id" element={<BouquetDetails />} />>*/}
+                    <Route path="bouquet/:id" element={<BouquetDetails />} />
 
                     <Route
                         path="/profile"
@@ -321,23 +315,14 @@ const App = () => {
                     </Route>
                 </Route>
 
-                {/*<Route
-                    path="/admin"
-                    element={
-                        user && roleId === 1 ? (
-                            <AdminLayout />
-                        ) : (
-                            <Navigate to="/" />
-                        )
-                    }
-                >
+                <Route path="/admin" element={<AdminLayout />}>
                     <Route index element={<AdminCharts />} />
                     <Route path="bouquets" element={<AdminBouquets />} />
                     <Route path="components" element={<AdminComponents />} />
                     <Route path="tickets" element={<AdminTickets />} />
                 </Route>
 
-                <Route path="*" element={<Navigate to="/" />} />*/}
+                {/*<Route path="*" element={<Navigate to="/" />} />*/}
             </Routes>
         </AppContext.Provider>
     );

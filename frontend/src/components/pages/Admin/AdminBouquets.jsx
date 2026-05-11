@@ -1,53 +1,31 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
+import { AppContext } from "../../../App";
+import api from "../../../api/axios";
 import AdminModal from "../../admin/AdminModal";
 
-const calculateBouquetPrice = (
-    bouquetId,
-    bouquetComponents,
-    componentPrices,
-) => {
-    const componentsInBouquet = bouquetComponents.filter(
-        (bc) => bc.bouquet_id === bouquetId,
-    );
-    let total = 0;
+const AdminBouquets = () => {
+    // Я забираю данные напрямую из твоего провайдера
+    const { adminData, publicData, fetchAdminData } = useContext(AppContext);
 
-    componentsInBouquet.forEach((bc) => {
-        const priceObj = componentPrices.find(
-            (cp) => cp.component_id === bc.component_id,
-        );
-        if (priceObj) {
-            total += priceObj.price * bc.quantity;
-        }
-    });
-    return total;
-};
+    const bouquets = adminData.allBouquets || [];
+    const components = adminData.allComponents || [];
+    const tags = publicData.tags || [];
 
-const AdminBouquets = ({
-    bouquets,
-    setBouquets,
-    components,
-    componentPrices,
-    bouquetComponents,
-    setBouquetComponents,
-    tags = [],
-    bouquetTags = [],
-    setBouquetTags,
-}) => {
     const [selectedBouquet, setSelectedBouquet] = useState(null);
     const [isAddBouquetOpen, setIsAddBouquetOpen] = useState(false);
     const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(null);
     const [isAddTagOpen, setIsAddTagOpen] = useState(false);
 
-    // Моя универсальная модалка для компонентов
     const [isCompModalOpen, setIsCompModalOpen] = useState(false);
-    const [compModalTarget, setCompModalTarget] = useState(null); // 'new' или bouquet_id
-    const [tempSelections, setTempSelections] = useState({}); // { component_id: quantity }
+    const [compModalTarget, setCompModalTarget] = useState(null);
+    const [tempSelections, setTempSelections] = useState({});
 
-    // Стейт для формы нового букета
+    // Добавил поле imageFile для отправки на сервер
     const [newBouquet, setNewBouquet] = useState({
         name: "",
         description: "",
         image_url: "",
+        imageFile: null,
         is_custom: 0,
         selectedComponents: {},
     });
@@ -61,26 +39,71 @@ const AdminBouquets = ({
         }
     }, [selectedBouquet]);
 
-    const toggleDeleteStatus = (bouquetId) => {
-        setBouquets((prev) =>
-            prev.map((b) =>
-                b.bouquet_id === bouquetId
-                    ? {
-                          ...b,
-                          deleted_at: b.deleted_at
-                              ? null
-                              : new Date().toISOString(),
-                      }
-                    : b,
-            ),
+    // Жесткая заглушка, пока я не получу свои данные
+    if (!adminData.allBouquets || adminData.allBouquets.length === 0) {
+        return (
+            <div className="admin-bouquets-container">
+                <div className="admin-dashboard-header">
+                    <h2>Я подгружаю данные базы букетов. Сиди и жди, Лили.</h2>
+                </div>
+            </div>
         );
+    }
+
+    // Мой инструмент подсчета себестоимости с учетом актуальных цен
+    const calculateBouquetPrice = (bouquet) => {
+        let total = 0;
+        if (!bouquet.components) return total;
+
+        bouquet.components.forEach((bc) => {
+            // Находим компонент в глобальном стейте
+            const compInDb = components.find(
+                (c) =>
+                    c.componentId === bc.componentId ||
+                    c.component_id === bc.component_id,
+            );
+            if (compInDb && compInDb.prices) {
+                // Ищем актуальную цену
+                const activePriceObj = compInDb.prices.find(
+                    (p) => new Date(p.endDate) > new Date(),
+                );
+                const price = activePriceObj
+                    ? parseFloat(activePriceObj.price)
+                    : 0;
+                // Достаем количество из промежуточной таблицы
+                const quantity =
+                    bc.BouquetComponent?.quantity ||
+                    bc.bouquet_component?.quantity ||
+                    1;
+                total += price * quantity;
+            }
+        });
+        return total.toFixed(2);
     };
 
-    const confirmDeleteBouquet = () => {
-        setBouquets((prev) =>
-            prev.filter((b) => b.bouquet_id !== isConfirmDeleteOpen),
-        );
-        setIsConfirmDeleteOpen(null);
+    const toggleDeleteStatus = async (bouquetId, isCurrentlyDeleted) => {
+        try {
+            // Восстанавливаем или удаляем через update
+            await api.put(`/admin/bouquets/${bouquetId}`, {
+                isDeleted: !isCurrentlyDeleted,
+            });
+            await fetchAdminData();
+        } catch (error) {
+            console.error(error);
+            alert("Ошибка при смене статуса. Смотри в консоль.");
+        }
+    };
+
+    const confirmDeleteBouquet = async () => {
+        try {
+            await api.delete(`/admin/bouquets/${isConfirmDeleteOpen}`);
+            await fetchAdminData();
+            setIsConfirmDeleteOpen(null);
+            setSelectedBouquet(null);
+        } catch (error) {
+            console.error(error);
+            alert("Я не смог удалить этот букет.");
+        }
     };
 
     const handleImageUpload = (e) => {
@@ -91,39 +114,44 @@ const AdminBouquets = ({
                 setNewBouquet((prev) => ({
                     ...prev,
                     image_url: reader.result,
+                    imageFile: file,
                 }));
             };
             reader.readAsDataURL(file);
         }
     };
 
-    // Моя новая жесткая функция для замены фото существующего букета
-    const handleEditImageUpload = (e) => {
+    const handleEditImageUpload = async (e) => {
         const file = e.target.files[0];
         if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                const newImageUrl = reader.result;
-                setBouquets((prev) =>
-                    prev.map((b) =>
-                        b.bouquet_id === selectedBouquet.bouquet_id
-                            ? { ...b, image_url: newImageUrl }
-                            : b,
-                    ),
-                );
-                setSelectedBouquet((prev) => ({
-                    ...prev,
-                    image_url: newImageUrl,
-                }));
+            const formData = new FormData();
+            formData.append("image", file);
+
+            const bId = selectedBouquet.bouquetId || selectedBouquet.bouquet_id;
+            try {
+                await api.put(`/admin/bouquets/${bId}`, formData);
+                await fetchAdminData();
+
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setSelectedBouquet((prev) => ({
+                        ...prev,
+                        image_url: reader.result,
+                    }));
+                };
+                reader.readAsDataURL(file);
+
                 alert(
                     "Изображение безжалостно заменено. Я контролирую каждый пиксель.",
                 );
-            };
-            reader.readAsDataURL(file);
+            } catch (error) {
+                console.error(error);
+                alert("Ошибка при загрузке картинки.");
+            }
         }
     };
 
-    const handleAddBouquet = (e) => {
+    const handleAddBouquet = async (e) => {
         e.preventDefault();
         if (!newBouquet.name) {
             alert(
@@ -132,108 +160,147 @@ const AdminBouquets = ({
             return;
         }
 
-        const newBouquetId =
-            bouquets.length > 0
-                ? Math.max(...bouquets.map((b) => b.bouquet_id)) + 1
-                : 1;
+        try {
+            const formData = new FormData();
+            formData.append("name", newBouquet.name);
+            formData.append("description", newBouquet.description);
+            formData.append("isCustom", newBouquet.is_custom);
+            if (newBouquet.imageFile) {
+                formData.append("image", newBouquet.imageFile);
+            }
 
-        const bouquetToAdd = {
-            bouquet_id: newBouquetId,
-            name: newBouquet.name,
-            description: newBouquet.description,
-            image_url: newBouquet.image_url,
-            created_at: new Date().toISOString(),
-            deleted_at: null,
-            is_custom: newBouquet.is_custom,
-        };
+            const response = await api.post("/admin/bouquets", formData);
+            const createdBouquetId =
+                response.data.bouquet.bouquetId ||
+                response.data.bouquet.bouquet_id;
 
-        setBouquets([...bouquets, bouquetToAdd]);
+            // Если были выбраны компоненты, сразу привязываем их
+            const selectedComps = Object.entries(newBouquet.selectedComponents);
+            if (selectedComps.length > 0) {
+                const payload = {
+                    components: selectedComps.map(([compId, qty]) => ({
+                        componentId: parseInt(compId),
+                        quantity: parseFloat(qty),
+                    })),
+                };
+                await api.put(
+                    `/admin/bouquets/${createdBouquetId}/components`,
+                    payload,
+                );
+            }
 
-        const newComponents = Object.entries(newBouquet.selectedComponents).map(
-            ([compId, qty], index) => ({
-                bouquet_component_id:
-                    bouquetComponents.length > 0
-                        ? Math.max(
-                              ...bouquetComponents.map(
-                                  (bc) => bc.bouquet_component_id,
-                              ),
-                          ) +
-                          1 +
-                          index
-                        : 1 + index,
-                component_id: parseInt(compId),
-                bouquet_id: newBouquetId,
-                quantity: parseFloat(qty),
-            }),
-        );
-
-        if (newComponents.length > 0) {
-            setBouquetComponents((prev) => [...prev, ...newComponents]);
+            await fetchAdminData();
+            setIsAddBouquetOpen(false);
+            setNewBouquet({
+                name: "",
+                description: "",
+                image_url: "",
+                imageFile: null,
+                is_custom: 0,
+                selectedComponents: {},
+            });
+        } catch (error) {
+            console.error(error);
+            alert("Ошибка создания. Проверь сеть.");
         }
-
-        setIsAddBouquetOpen(false);
-        setNewBouquet({
-            name: "",
-            description: "",
-            image_url: "",
-            is_custom: 0,
-            selectedComponents: {},
-        });
     };
 
-    const handleSaveDescription = () => {
-        setBouquets((prev) =>
-            prev.map((b) =>
-                b.bouquet_id === selectedBouquet.bouquet_id
-                    ? { ...b, description: editDesc }
-                    : b,
-            ),
-        );
-        setSelectedBouquet((prev) => ({ ...prev, description: editDesc }));
-        alert("Описание подчинилось моей воле и было сохранено.");
+    const handleSaveDescription = async () => {
+        const bId = selectedBouquet.bouquetId || selectedBouquet.bouquet_id;
+        try {
+            await api.put(`/admin/bouquets/${bId}`, {
+                description: editDesc,
+            });
+            await fetchAdminData();
+            alert("Описание подчинилось моей воле и было сохранено.");
+        } catch (error) {
+            console.error(error);
+        }
     };
 
-    const removeComponentFromBouquet = (bouquetComponentId) => {
-        setBouquetComponents((prev) =>
-            prev.filter((bc) => bc.bouquet_component_id !== bouquetComponentId),
-        );
+    const removeComponentFromBouquet = async (componentIdToRemove) => {
+        const bId = selectedBouquet.bouquetId || selectedBouquet.bouquet_id;
+        try {
+            const currentComps = selectedBouquet.components || [];
+            // Фильтруем старые компоненты, убираем удаленный
+            const updatedPayload = currentComps
+                .filter(
+                    (c) =>
+                        (c.componentId || c.component_id) !==
+                        componentIdToRemove,
+                )
+                .map((c) => ({
+                    componentId: c.componentId || c.component_id,
+                    quantity:
+                        c.BouquetComponent?.quantity ||
+                        c.bouquet_component?.quantity ||
+                        1,
+                }));
+
+            await api.put(`/admin/bouquets/${bId}/components`, {
+                components: updatedPayload,
+            });
+
+            // Обновляем локально для мгновенной реакции
+            setSelectedBouquet((prev) => ({
+                ...prev,
+                components: prev.components.filter(
+                    (c) =>
+                        (c.componentId || c.component_id) !==
+                        componentIdToRemove,
+                ),
+            }));
+            await fetchAdminData();
+        } catch (error) {
+            console.error(error);
+        }
     };
 
-    const removeTagFromBouquet = (bouquetTagId) => {
-        setBouquetTags((prev) =>
-            prev.filter((bt) => bt.bouquet_tag_id !== bouquetTagId),
-        );
+    const removeTagFromBouquet = async (tagIdToRemove) => {
+        const bId = selectedBouquet.bouquetId || selectedBouquet.bouquet_id;
+        try {
+            await api.delete(`/admin/bouquets/${bId}/tags/${tagIdToRemove}`);
+
+            setSelectedBouquet((prev) => ({
+                ...prev,
+                tags: prev.tags.filter(
+                    (t) => (t.tagId || t.tag_id) !== tagIdToRemove,
+                ),
+            }));
+            await fetchAdminData();
+        } catch (error) {
+            console.error(error);
+        }
     };
 
-    const handleAddTagToExisting = () => {
+    const handleAddTagToExisting = async () => {
         if (!addTagId) return;
-        if (
-            bouquetTags.some(
-                (bt) =>
-                    bt.bouquet_id === selectedBouquet.bouquet_id &&
-                    bt.tag_id === parseInt(addTagId),
-            )
-        ) {
-            alert("Этот тег уже привязан. Я не позволю дублировать данные.");
-            return;
-        }
+        const bId = selectedBouquet.bouquetId || selectedBouquet.bouquet_id;
 
-        const newBtId =
-            bouquetTags.length > 0
-                ? Math.max(...bouquetTags.map((bt) => bt.bouquet_tag_id)) + 1
-                : 1;
-        if (setBouquetTags) {
-            setBouquetTags([
-                ...bouquetTags,
-                {
-                    bouquet_tag_id: newBtId,
-                    bouquet_id: selectedBouquet.bouquet_id,
-                    tag_id: parseInt(addTagId),
-                },
-            ]);
+        try {
+            await api.post(`/admin/bouquets/${bId}/tags`, {
+                tagId: parseInt(addTagId),
+            });
+            await fetchAdminData();
+
+            // Легкое локальное обновление
+            const addedTag = tags.find(
+                (t) =>
+                    t.tagId === parseInt(addTagId) ||
+                    t.tag_id === parseInt(addTagId),
+            );
+            if (addedTag) {
+                setSelectedBouquet((prev) => ({
+                    ...prev,
+                    tags: [...(prev.tags || []), addedTag],
+                }));
+            }
+            setIsAddTagOpen(false);
+            setAddTagId("");
+        } catch (error) {
+            console.error(error);
+            alert("Ошибка привязки тега. Возможно, он уже висит.");
         }
-        setIsAddTagOpen(false);
-        setAddTagId("");
     };
 
     // ==========================================
@@ -244,12 +311,14 @@ const AdminBouquets = ({
         if (target === "new") {
             setTempSelections({ ...newBouquet.selectedComponents });
         } else {
-            const currentComps = bouquetComponents.filter(
-                (bc) => bc.bouquet_id === target,
-            );
+            const currentComps = selectedBouquet.components || [];
             const selections = {};
-            currentComps.forEach((bc) => {
-                selections[bc.component_id] = bc.quantity;
+            currentComps.forEach((c) => {
+                const cId = c.componentId || c.component_id;
+                selections[cId] =
+                    c.BouquetComponent?.quantity ||
+                    c.bouquet_component?.quantity ||
+                    1;
             });
             setTempSelections(selections);
         }
@@ -275,55 +344,36 @@ const AdminBouquets = ({
         });
     };
 
-    const saveCompSelections = () => {
+    const saveCompSelections = async () => {
         if (compModalTarget === "new") {
             setNewBouquet((prev) => ({
                 ...prev,
                 selectedComponents: tempSelections,
             }));
+            setIsCompModalOpen(false);
         } else {
-            const otherBcs = bouquetComponents.filter(
-                (bc) => bc.bouquet_id !== compModalTarget,
-            );
-
-            let maxId =
-                bouquetComponents.length > 0
-                    ? Math.max(
-                          ...bouquetComponents.map(
-                              (bc) => bc.bouquet_component_id,
-                          ),
-                      )
-                    : 0;
-            const updatedCurrentBcs = [];
-
-            Object.entries(tempSelections).forEach(([compIdStr, qty]) => {
-                const compId = parseInt(compIdStr);
-                const quantity = parseFloat(qty);
-
-                if (quantity > 0) {
-                    const existingBc = bouquetComponents.find(
-                        (bc) =>
-                            bc.bouquet_id === compModalTarget &&
-                            bc.component_id === compId,
-                    );
-
-                    if (existingBc) {
-                        updatedCurrentBcs.push({ ...existingBc, quantity });
-                    } else {
-                        maxId++;
-                        updatedCurrentBcs.push({
-                            bouquet_component_id: maxId,
-                            component_id: compId,
-                            bouquet_id: compModalTarget,
-                            quantity: quantity,
-                        });
-                    }
-                }
-            });
-
-            setBouquetComponents([...otherBcs, ...updatedCurrentBcs]);
+            try {
+                const payload = {
+                    components: Object.entries(tempSelections).map(
+                        ([id, qty]) => ({
+                            componentId: parseInt(id),
+                            quantity: parseFloat(qty),
+                        }),
+                    ),
+                };
+                await api.put(
+                    `/admin/bouquets/${compModalTarget}/components`,
+                    payload,
+                );
+                await fetchAdminData();
+                setIsCompModalOpen(false);
+                // Закрываем модалку деталей, чтобы при открытии подтянулись свежие данные
+                setSelectedBouquet(null);
+            } catch (error) {
+                console.error(error);
+                alert("Не удалось сохранить состав букета.");
+            }
         }
-        setIsCompModalOpen(false);
     };
 
     return (
@@ -345,58 +395,95 @@ const AdminBouquets = ({
                         <th>Изображение</th>
                         <th>Название</th>
                         <th>Тип</th>
-                        <th>Удален</th>
+                        <th>Удален / Статус</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {bouquets.map((b) => (
-                        <tr
-                            key={b.bouquet_id}
-                            className={
-                                b.deleted_at ? "admin-bouquets-row-deleted" : ""
-                            }
-                        >
-                            <td>{b.bouquet_id}</td>
-                            <td>
-                                {b.image_url ? (
-                                    <img
-                                        src={b.image_url}
-                                        alt="img"
-                                        className="admin-bouquets-preview"
-                                    />
-                                ) : (
-                                    "Нет фото"
-                                )}
-                            </td>
-                            <td
-                                className="admin-bouquets-cell-clickable"
-                                onClick={() => setSelectedBouquet(b)}
+                    {bouquets.map((b) => {
+                        const bId = b.bouquetId || b.bouquet_id;
+                        const isDeleted = !!(b.deletedAt || b.deleted_at);
+
+                        // Проверка на удаленные компоненты внутри букета
+                        const hasDeletedComponents =
+                            b.components &&
+                            b.components.some(
+                                (c) => !!(c.deletedAt || c.deleted_at),
+                            );
+
+                        return (
+                            <tr
+                                key={bId}
+                                className={
+                                    isDeleted || hasDeletedComponents
+                                        ? "admin-bouquets-row-deleted"
+                                        : ""
+                                }
                             >
-                                {b.name}
-                            </td>
-                            <td>{b.is_custom ? "Кастомный" : "Стандарт"}</td>
-                            <td>
-                                <input
-                                    type="checkbox"
-                                    checked={!!b.deleted_at}
-                                    onChange={() =>
-                                        toggleDeleteStatus(b.bouquet_id)
-                                    }
-                                />
-                            </td>
-                            <td>
-                                <button
-                                    className="admin-bouquets-btn-delete"
-                                    onClick={() =>
-                                        setIsConfirmDeleteOpen(b.bouquet_id)
-                                    }
+                                <td>{bId}</td>
+                                <td>
+                                    {b.imageUrl || b.image_url ? (
+                                        <img
+                                            src={
+                                                b.imageUrl?.startsWith("http")
+                                                    ? b.imageUrl
+                                                    : `/uploads/${b.imageUrl || b.image_url}`
+                                            }
+                                            alt="img"
+                                            className="admin-bouquets-preview"
+                                        />
+                                    ) : (
+                                        "Нет фото"
+                                    )}
+                                </td>
+                                <td
+                                    className="admin-bouquets-cell-clickable"
+                                    onClick={() => setSelectedBouquet(b)}
                                 >
-                                    Удалить
-                                </button>
-                            </td>
-                        </tr>
-                    ))}
+                                    {b.name}
+                                </td>
+                                <td>
+                                    {b.isCustom || b.is_custom
+                                        ? "Кастомный"
+                                        : "Стандарт"}
+                                </td>
+                                <td>
+                                    {hasDeletedComponents ? (
+                                        <span
+                                            style={{
+                                                color: "var(--color-error)",
+                                                fontWeight: "bold",
+                                                fontSize: "12px",
+                                            }}
+                                        >
+                                            Отсутствуют некоторые компоненты
+                                        </span>
+                                    ) : (
+                                        <input
+                                            type="checkbox"
+                                            checked={isDeleted}
+                                            onChange={() =>
+                                                toggleDeleteStatus(
+                                                    bId,
+                                                    isDeleted,
+                                                )
+                                            }
+                                        />
+                                    )}
+                                </td>
+                                <td>
+                                    <button
+                                        className="admin-bouquets-btn-delete"
+                                        onClick={() =>
+                                            setIsConfirmDeleteOpen(bId)
+                                        }
+                                    >
+                                        Удалить
+                                    </button>
+                                </td>
+                            </tr>
+                        );
+                    })}
                 </tbody>
             </table>
 
@@ -408,9 +495,14 @@ const AdminBouquets = ({
                 >
                     <div className="admin-desc-edit-group">
                         <label>Изображение букета:</label>
-                        {selectedBouquet.image_url && (
+                        {(selectedBouquet.imageUrl ||
+                            selectedBouquet.image_url) && (
                             <img
-                                src={selectedBouquet.image_url}
+                                src={
+                                    selectedBouquet.imageUrl?.startsWith("http")
+                                        ? selectedBouquet.imageUrl
+                                        : `/uploads/${selectedBouquet.imageUrl || selectedBouquet.image_url}`
+                                }
                                 alt="Текущее фото"
                                 className="admin-bouquets-preview-large"
                                 style={{
@@ -452,7 +544,10 @@ const AdminBouquets = ({
                         <button
                             className="admin-bouquets-btn-secondary"
                             onClick={() =>
-                                openCompModal(selectedBouquet.bouquet_id)
+                                openCompModal(
+                                    selectedBouquet.bouquetId ||
+                                        selectedBouquet.bouquet_id,
+                                )
                             }
                         >
                             Редактировать компоненты букета
@@ -468,49 +563,31 @@ const AdminBouquets = ({
                     <p className="admin-bouquets-total-price">
                         Себестоимость:{" "}
                         <strong>
-                            {calculateBouquetPrice(
-                                selectedBouquet.bouquet_id,
-                                bouquetComponents,
-                                componentPrices,
-                            )}{" "}
-                            ₽
+                            {calculateBouquetPrice(selectedBouquet)} ₽
                         </strong>
                     </p>
 
                     <h3 className="admin-subsection-title">Теги букета:</h3>
                     <div className="admin-tags-list">
-                        {bouquetTags
-                            .filter(
-                                (bt) =>
-                                    bt.bouquet_id ===
-                                    selectedBouquet.bouquet_id,
-                            )
-                            .map((bt) => {
-                                const tagObj = tags.find(
-                                    (t) => t.tag_id === bt.tag_id,
-                                );
-                                return (
-                                    <span
-                                        key={bt.bouquet_tag_id}
-                                        className="admin-tag-badge"
-                                    >
-                                        {tagObj ? tagObj.name : "Неизвестно"}
-                                        <button
-                                            onClick={() =>
-                                                removeTagFromBouquet(
-                                                    bt.bouquet_tag_id,
-                                                )
-                                            }
-                                        >
-                                            &times;
-                                        </button>
-                                    </span>
-                                );
-                            })}
-                        {bouquetTags.filter(
-                            (bt) =>
-                                bt.bouquet_id === selectedBouquet.bouquet_id,
-                        ).length === 0 && (
+                        {(selectedBouquet.tags || []).map((t) => (
+                            <span
+                                key={t.tagId || t.tag_id}
+                                className="admin-tag-badge"
+                            >
+                                {t.name}
+                                <button
+                                    onClick={() =>
+                                        removeTagFromBouquet(
+                                            t.tagId || t.tag_id,
+                                        )
+                                    }
+                                >
+                                    &times;
+                                </button>
+                            </span>
+                        ))}
+                        {(!selectedBouquet.tags ||
+                            selectedBouquet.tags.length === 0) && (
                             <span className="admin-text-muted">Нет тегов</span>
                         )}
                     </div>
@@ -525,51 +602,58 @@ const AdminBouquets = ({
                             </tr>
                         </thead>
                         <tbody>
-                            {bouquetComponents
-                                .filter(
-                                    (bc) =>
-                                        bc.bouquet_id ===
-                                        selectedBouquet.bouquet_id,
-                                )
-                                .map((bc) => {
-                                    const comp = components.find(
-                                        (c) =>
-                                            c.component_id === bc.component_id,
-                                    );
-                                    return (
-                                        <tr key={bc.bouquet_component_id}>
-                                            <td>
-                                                {comp
-                                                    ? comp.name
-                                                    : "Неизвестно"}
-                                            </td>
-                                            <td>
-                                                {bc.quantity}{" "}
-                                                {comp ? comp.unit : ""}
-                                            </td>
-                                            <td>
-                                                <button
-                                                    className="admin-bouquets-icon-btn"
-                                                    onClick={() =>
-                                                        removeComponentFromBouquet(
-                                                            bc.bouquet_component_id,
-                                                        )
-                                                    }
+                            {(selectedBouquet.components || []).map((c) => {
+                                const cId = c.componentId || c.component_id;
+                                const qty =
+                                    c.BouquetComponent?.quantity ||
+                                    c.bouquet_component?.quantity ||
+                                    1;
+                                const isCompDeleted = !!(
+                                    c.deletedAt || c.deleted_at
+                                );
+
+                                return (
+                                    <tr key={cId}>
+                                        <td
+                                            style={
+                                                isCompDeleted
+                                                    ? {
+                                                          color: "var(--color-error)",
+                                                          textDecoration:
+                                                              "line-through",
+                                                      }
+                                                    : {}
+                                            }
+                                        >
+                                            {c.name}{" "}
+                                            {isCompDeleted && "(Удален)"}
+                                        </td>
+                                        <td>
+                                            {qty} {c.unit}
+                                        </td>
+                                        <td>
+                                            <button
+                                                className="admin-bouquets-icon-btn"
+                                                onClick={() =>
+                                                    removeComponentFromBouquet(
+                                                        cId,
+                                                    )
+                                                }
+                                            >
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="16"
+                                                    height="16"
+                                                    fill="currentColor"
+                                                    viewBox="0 0 16 16"
                                                 >
-                                                    <svg
-                                                        xmlns="http://www.w3.org/2000/svg"
-                                                        width="16"
-                                                        height="16"
-                                                        fill="currentColor"
-                                                        viewBox="0 0 16 16"
-                                                    >
-                                                        <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5M8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5m3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0" />
-                                                    </svg>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
+                                                    <path d="M2.5 1a1 1 0 0 0-1 1v1a1 1 0 0 0 1 1H3v9a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V4h.5a1 1 0 0 0 1-1V2a1 1 0 0 0-1-1H10a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1zm3 4a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5M8 5a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7A.5.5 0 0 1 8 5m3 .5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 1 0" />
+                                                </svg>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </AdminModal>
@@ -583,11 +667,12 @@ const AdminBouquets = ({
                 >
                     <div className="admin-comp-grid">
                         {components.map((c) => {
-                            const isSelected = !!tempSelections[c.component_id];
-                            const qty = tempSelections[c.component_id] || "";
+                            const cId = c.componentId || c.component_id;
+                            const isSelected = !!tempSelections[cId];
+                            const qty = tempSelections[cId] || "";
                             return (
                                 <label
-                                    key={c.component_id}
+                                    key={cId}
                                     className={`admin-comp-card ${isSelected ? "admin-comp-card--selected" : ""}`}
                                 >
                                     <input
@@ -596,15 +681,21 @@ const AdminBouquets = ({
                                         checked={isSelected}
                                         onChange={(e) =>
                                             handleCompSelectionToggle(
-                                                c.component_id,
+                                                cId,
                                                 e.target.checked,
                                             )
                                         }
                                     />
                                     <div className="admin-comp-card-image">
-                                        {c.image_url ? (
+                                        {c.imageUrl || c.image_url ? (
                                             <img
-                                                src={c.image_url}
+                                                src={
+                                                    c.imageUrl?.startsWith(
+                                                        "http",
+                                                    )
+                                                        ? c.imageUrl
+                                                        : `/uploads/${c.imageUrl || c.image_url}`
+                                                }
                                                 alt={c.name}
                                             />
                                         ) : (
@@ -629,7 +720,7 @@ const AdminBouquets = ({
                                                     }
                                                     onChange={(e) =>
                                                         handleCompQtyChange(
-                                                            c.component_id,
+                                                            cId,
                                                             e.target.value,
                                                         )
                                                     }
@@ -670,7 +761,10 @@ const AdminBouquets = ({
                         >
                             <option value="">-- Выбери --</option>
                             {tags.map((t) => (
-                                <option key={t.tag_id} value={t.tag_id}>
+                                <option
+                                    key={t.tagId || t.tag_id}
+                                    value={t.tagId || t.tag_id}
+                                >
                                     {t.name}
                                 </option>
                             ))}
@@ -769,7 +863,8 @@ const AdminBouquets = ({
                                     ).map(([id, qty]) => {
                                         const c = components.find(
                                             (comp) =>
-                                                comp.component_id ===
+                                                (comp.componentId ||
+                                                    comp.component_id) ===
                                                 parseInt(id),
                                         );
                                         return (
@@ -809,15 +904,15 @@ const AdminBouquets = ({
                 >
                     <div className="admin-bouquets-confirm">
                         <p>
-                            Это действие уничтожит букет (ID:{" "}
-                            {isConfirmDeleteOpen}) навсегда. Я предупредил.
+                            Это действие отправит букет (ID:{" "}
+                            {isConfirmDeleteOpen}) в архив.
                         </p>
                         <div className="admin-bouquets-modal-controls">
                             <button
                                 className="admin-bouquets-btn-delete"
                                 onClick={confirmDeleteBouquet}
                             >
-                                Да, уничтожить
+                                Да, убрать его
                             </button>
                             <button
                                 className="admin-bouquets-btn-secondary"

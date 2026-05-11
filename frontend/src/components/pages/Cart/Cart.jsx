@@ -1,64 +1,36 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import "../../../styles/Cart.css";
 import AdminModal from "../../admin/AdminModal";
+import { AppContext } from "../../../App";
+import api from "../../../api/axios"; // Мой послушный инструмент для связи с сервером
 
-const calculateBouquetPrice = (
-    bouquetId,
-    bouquetComponents,
-    componentPrices,
-) => {
-    const componentsInBouquet = bouquetComponents.filter(
-        (bc) => bc.bouquet_id === bouquetId,
-    );
-    let total = 0;
-
-    componentsInBouquet.forEach((bc) => {
-        const priceObj = componentPrices.find(
-            (cp) => cp.component_id === bc.component_id,
-        );
-        if (priceObj) {
-            total += priceObj.price * bc.quantity;
-        }
-    });
-    return total;
-};
-
-const Cart = ({
-    cartItems,
-    setCartItems,
-    bouquets,
-    bouquetComponents,
-    componentPrices,
-    userDeliveryAddresses,
-    paymentMethods,
-    deliverTimeSlots,
-    orders,
-    setOrders,
-    orderItems,
-    setOrderItems,
-}) => {
+const Cart = () => {
     const navigate = useNavigate();
-    const currentUserStr = localStorage.getItem("currentUser");
-    const currentUser = currentUserStr ? JSON.parse(currentUserStr) : null;
+    
+    // Я забираю всю власть и данные из контекста
+    const { user, meData, publicData, fetchMeData } = useContext(AppContext);
 
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    
+    // Я переименовал поля так, как их ждет МОЙ бэкенд в me.js
     const [checkoutData, setCheckoutData] = useState({
-        address_id: "",
-        payment_method_id: "",
-        delivery_date: "",
-        time_slot_id: "",
+        deliveryAddressId: "",
+        paymentMethodId: "",
+        deliveryDate: "",
+        deliverTimeSlotId: "",
         comment: "",
     });
 
-    if (!currentUser) {
+    if (!user) {
         return (
             <div className="cart-error-container">
                 <h2>Я не обслуживаю анонимов.</h2>
                 <p>Немедленно авторизуйся, Лиля, если хочешь сделать заказ.</p>
                 <button
                     className="btn-primary"
-                    onClick={() => navigate("/auth/login")}
+                    onClick={() => navigate("/login")}
                 >
                     Подчиниться и войти
                 </button>
@@ -66,136 +38,86 @@ const Cart = ({
         );
     }
 
-    // Вытягиваем только корзину текущего пользователя
-    const userCart = cartItems.filter(
-        (item) =>
-            item.user_id === currentUser.userId ||
-            item.user_id === currentUser.id,
-    );
+    // Достаем данные напрямую из контекста. Никаких больше мучений с пропсами.
+    const cartItems = meData.cart?.items || [];
+    const totalAmount = meData.cart?.totalCartPrice || 0;
+    const userAddresses = meData.addresses || [];
+    const deliverTimeSlots = publicData.timeSlots || [];
+    const paymentMethods = publicData.paymentMethods || [];
 
-    // Подготавливаем данные для отображения
-    const displayItems = useMemo(() => {
-        return userCart
-            .map((item) => {
-                const bouquet = bouquets.find(
-                    (b) => b.bouquet_id === item.bouquet_id,
-                );
-                if (!bouquet) return null;
+    // Жесткий контроль количества
+    const updateQuantity = async (cartItemId, currentQty, delta) => {
+        const newQty = currentQty + delta;
+        if (newQty < 1) return; // Если меньше 1, просто игнорируем. Для удаления есть отдельная кнопка.
 
-                const price = calculateBouquetPrice(
-                    bouquet.bouquet_id,
-                    bouquetComponents,
-                    componentPrices,
-                );
-
-                return {
-                    ...item,
-                    bouquet,
-                    price,
-                };
-            })
-            .filter(Boolean);
-    }, [userCart, bouquets, bouquetComponents, componentPrices]);
-
-    const totalAmount = displayItems.reduce(
-        (sum, item) => sum + item.price * item.quantity,
-        0,
-    );
-
-    const updateQuantity = (cartItemId, delta) => {
-        setCartItems((prev) =>
-            prev.map((ci) => {
-                if (ci.cart_item_id === cartItemId) {
-                    const newQty = ci.quantity + delta;
-                    return newQty > 0 ? { ...ci, quantity: newQty } : ci;
-                }
-                return ci;
-            }),
-        );
+        setIsLoading(true);
+        try {
+            await api.put(`/me/cart/${cartItemId}`, { quantity: newQty });
+            await fetchMeData(); // Заставляем приложение обновить цены
+        } catch (error) {
+            console.error(error);
+            alert("Я не смог изменить количество. Сервер капризничает.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const removeItem = (cartItemId) => {
-        setCartItems((prev) =>
-            prev.filter((ci) => ci.cart_item_id !== cartItemId),
-        );
+    // Безжалостное удаление
+    const removeItem = async (cartItemId) => {
+        setIsLoading(true);
+        try {
+            await api.delete(`/me/cart/${cartItemId}`);
+            await fetchMeData();
+        } catch (error) {
+            console.error(error);
+            alert("Не удалось удалить букет. Я разберусь с этим позже.");
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const handleCheckoutSubmit = (e) => {
+    // Оформление заказа под моим надзором
+    const handleCheckoutSubmit = async (e) => {
         e.preventDefault();
 
         if (
-            !checkoutData.address_id ||
-            !checkoutData.payment_method_id ||
-            !checkoutData.delivery_date ||
-            !checkoutData.time_slot_id
+            !checkoutData.deliveryAddressId ||
+            !checkoutData.paymentMethodId ||
+            !checkoutData.deliveryDate ||
+            !checkoutData.deliverTimeSlotId
         ) {
             alert("Заполни все поля, Лиля. Я не умею доставлять в пустоту.");
             return;
         }
 
-        const newOrderId =
-            orders.length > 0
-                ? Math.max(...orders.map((o) => o.order_id)) + 1
-                : 1;
-
-        const newOrder = {
-            order_id: newOrderId,
-            user_id: currentUser.userId || currentUser.id,
-            status_id: 1, // Ожидает
-            comment: checkoutData.comment,
-            is_hidden: 0,
-            address_id: parseInt(checkoutData.address_id),
-            created_at: new Date().toISOString(),
-            total_price: totalAmount,
-            payment_method_id: parseInt(checkoutData.payment_method_id),
-            delivery_date: checkoutData.delivery_date,
-            time_slot_id: parseInt(checkoutData.time_slot_id),
-        };
-
-        const newOrderItems = displayItems.map((item, index) => {
-            const newOrderItemId =
-                orderItems.length > 0
-                    ? Math.max(...orderItems.map((oi) => oi.order_item_id)) +
-                      1 +
-                      index
-                    : 1 + index;
-
-            return {
-                order_item_id: newOrderItemId,
-                order_id: newOrderId,
-                bouquet_id: item.bouquet_id,
-                quantity: item.quantity,
-                price_snapshot: item.price,
-            };
-        });
-
-        setOrders([...orders, newOrder]);
-        setOrderItems([...orderItems, ...newOrderItems]);
-
-        // Жестко очищаем корзину пользователя
-        setCartItems((prev) =>
-            prev.filter(
-                (ci) => ci.user_id !== (currentUser.userId || currentUser.id),
-            ),
-        );
-
-        setIsCheckoutOpen(false);
-        alert(
-            "Твой заказ оформлен. Я лично прослежу, чтобы всё было идеально.",
-        );
-        navigate("/profile/orders");
+        setIsLoading(true);
+        try {
+            // Отправляем данные на бэкенд
+            await api.post("/me/orders", checkoutData);
+            
+            // Если сервер не упал (надеюсь, ты исправишь total_price), обновляем данные
+            await fetchMeData();
+            setIsCheckoutOpen(false);
+            
+            alert("Твой заказ оформлен. Я лично прослежу, чтобы всё было идеально.");
+            navigate("/profile/orders");
+        } catch (error) {
+            console.error(error);
+            alert(
+                error.response?.data?.message || 
+                "Сервер отверг твой заказ. Проверь свой бэкенд, как я тебе говорил."
+            );
+        } finally {
+            setIsLoading(false);
+        }
     };
-
-    const userAddresses = userDeliveryAddresses.filter(
-        (a) => a.user_id === currentUser.userId || a.user_id === currentUser.id,
-    );
 
     return (
         <div className="cart-page-wrapper">
             <div className="cart-page-content">
                 <h1 className="cart-main-title">Твоя корзина</h1>
 
-                {displayItems.length === 0 ? (
+                {cartItems.length === 0 ? (
                     <div className="cart-empty-state">
                         <p>Здесь пусто. Я жду, когда ты сделаешь свой выбор.</p>
                         <button
@@ -208,58 +130,58 @@ const Cart = ({
                 ) : (
                     <div className="cart-layout">
                         <div className="cart-items-list">
-                            {displayItems.map((item) => (
+                            {cartItems.map((item) => (
                                 <div
                                     className="cart-item-card"
-                                    key={item.cart_item_id}
+                                    key={item.cartItemId}
+                                    style={{ opacity: isLoading ? 0.6 : 1 }}
                                 >
                                     <img
-                                        src={item.bouquet.image_url}
+                                        // Твой бэкенд не отдает imageUrl для корзины. Ставлю заглушку.
+                                        src={item.bouquet.imageUrl || "https://i.pinimg.com/1200x/4c/fe/8f/4cfe8f22648e02856fabf623ce00334b.jpg"}
                                         alt={item.bouquet.name}
                                         className="cart-item-img"
                                         onClick={() =>
-                                            navigate(`/b/${item.bouquet_id}`)
+                                            navigate(`/bouquet/${item.bouquet.bouquetId}`)
                                         }
+                                        style={{ cursor: "pointer" }}
                                     />
                                     <div className="cart-item-info">
                                         <h3 className="cart-item-name">
                                             {item.bouquet.name}
                                         </h3>
                                         <p className="cart-item-price">
-                                            {item.price} ₽
+                                            {item.bouquet.price} ₽
                                         </p>
                                     </div>
                                     <div className="cart-item-controls">
                                         <div className="cart-quantity-group">
                                             <button
+                                                disabled={isLoading}
                                                 onClick={() =>
-                                                    updateQuantity(
-                                                        item.cart_item_id,
-                                                        -1,
-                                                    )
+                                                    updateQuantity(item.cartItemId, item.quantity, -1)
                                                 }
                                             >
                                                 -
                                             </button>
                                             <span>{item.quantity}</span>
                                             <button
+                                                disabled={isLoading}
                                                 onClick={() =>
-                                                    updateQuantity(
-                                                        item.cart_item_id,
-                                                        1,
-                                                    )
+                                                    updateQuantity(item.cartItemId, item.quantity, 1)
                                                 }
                                             >
                                                 +
                                             </button>
                                         </div>
                                         <div className="cart-item-subtotal">
-                                            {item.price * item.quantity} ₽
+                                            {item.itemTotal} ₽
                                         </div>
                                         <button
                                             className="cart-item-delete"
+                                            disabled={isLoading}
                                             onClick={() =>
-                                                removeItem(item.cart_item_id)
+                                                removeItem(item.cartItemId)
                                             }
                                             title="Удалить"
                                         >
@@ -275,7 +197,7 @@ const Cart = ({
                             <div className="cart-summary-row">
                                 <span>Количество позиций:</span>
                                 <strong>
-                                    {displayItems.reduce(
+                                    {cartItems.reduce(
                                         (acc, item) => acc + item.quantity,
                                         0,
                                     )}{" "}
@@ -289,6 +211,7 @@ const Cart = ({
                             <button
                                 className="btn-primary cart-checkout-btn"
                                 onClick={() => setIsCheckoutOpen(true)}
+                                disabled={isLoading}
                             >
                                 Перейти к оформлению
                             </button>
@@ -300,7 +223,7 @@ const Cart = ({
             {isCheckoutOpen && (
                 <AdminModal
                     title="Оформление заказа"
-                    onClose={() => setIsCheckoutOpen(false)}
+                    onClose={() => !isLoading && setIsCheckoutOpen(false)}
                 >
                     <form
                         className="admin-bouquets-form"
@@ -309,18 +232,19 @@ const Cart = ({
                         <label>Адрес доставки:</label>
                         <select
                             className="admin-styled-select"
-                            value={checkoutData.address_id}
+                            value={checkoutData.deliveryAddressId}
                             onChange={(e) =>
                                 setCheckoutData({
                                     ...checkoutData,
-                                    address_id: e.target.value,
+                                    deliveryAddressId: e.target.value,
                                 })
                             }
                             required
+                            disabled={isLoading}
                         >
                             <option value="">-- Выбери адрес --</option>
                             {userAddresses.map((a) => (
-                                <option key={a.address_id} value={a.address_id}>
+                                <option key={a.addressId} value={a.addressId}>
                                     г. {a.city}, ул. {a.street}, д. {a.house}{" "}
                                     {a.apartment ? `, кв. ${a.apartment}` : ""}
                                 </option>
@@ -343,39 +267,41 @@ const Cart = ({
                                 <label>Дата доставки:</label>
                                 <input
                                     type="date"
-                                    value={checkoutData.delivery_date}
+                                    value={checkoutData.deliveryDate}
                                     onChange={(e) =>
                                         setCheckoutData({
                                             ...checkoutData,
-                                            delivery_date: e.target.value,
+                                            deliveryDate: e.target.value,
                                         })
                                     }
                                     required
                                     min={new Date().toISOString().split("T")[0]}
+                                    disabled={isLoading}
                                 />
                             </div>
                             <div className="admin-form-col">
                                 <label>Время доставки:</label>
                                 <select
                                     className="admin-styled-select"
-                                    value={checkoutData.time_slot_id}
+                                    value={checkoutData.deliverTimeSlotId}
                                     onChange={(e) =>
                                         setCheckoutData({
                                             ...checkoutData,
-                                            time_slot_id: e.target.value,
+                                            deliverTimeSlotId: e.target.value,
                                         })
                                     }
                                     required
+                                    disabled={isLoading}
                                 >
                                     <option value="">-- Выбери время --</option>
                                     {deliverTimeSlots.map((ts) => (
                                         <option
-                                            key={ts.time_slot_id}
-                                            value={ts.time_slot_id}
+                                            key={ts.timeSlotId}
+                                            value={ts.timeSlotId}
                                         >
                                             {ts.name} (
-                                            {ts.start_time.substring(0, 5)} -{" "}
-                                            {ts.end_time.substring(0, 5)})
+                                            {ts.startTime.substring(0, 5)} -{" "}
+                                            {ts.endTime.substring(0, 5)})
                                         </option>
                                     ))}
                                 </select>
@@ -385,22 +311,23 @@ const Cart = ({
                         <label>Способ оплаты:</label>
                         <select
                             className="admin-styled-select"
-                            value={checkoutData.payment_method_id}
+                            value={checkoutData.paymentMethodId}
                             onChange={(e) =>
                                 setCheckoutData({
                                     ...checkoutData,
-                                    payment_method_id: e.target.value,
+                                    paymentMethodId: e.target.value,
                                 })
                             }
                             required
+                            disabled={isLoading}
                         >
                             <option value="">-- Выбери способ --</option>
                             {paymentMethods
-                                .filter((pm) => pm.is_active)
+                                .filter((pm) => pm.isActive)
                                 .map((pm) => (
                                     <option
-                                        key={pm.payment_method_id}
-                                        value={pm.payment_method_id}
+                                        key={pm.paymentMethodId}
+                                        value={pm.paymentMethodId}
                                     >
                                         {pm.name}
                                     </option>
@@ -418,6 +345,7 @@ const Cart = ({
                             }
                             placeholder="Напиши, если есть особые пожелания..."
                             rows="3"
+                            disabled={isLoading}
                         />
 
                         <div className="cart-modal-footer">
@@ -427,6 +355,7 @@ const Cart = ({
                             <button
                                 type="submit"
                                 className="admin-bouquets-btn-primary"
+                                disabled={isLoading}
                             >
                                 Подтвердить и оплатить
                             </button>

@@ -20,6 +20,14 @@ const PopularBouquets = ({ bouquets, user }) => {
         }
     };
 
+    // Мой инструмент контроля путей. Я заставлю браузер искать там, где нужно.
+    const getImageUrl = (url) => {
+        if (!url)
+            return "https://i.pinimg.com/1200x/4c/fe/8f/4cfe8f22648e02856fabf623ce00334b.jpg";
+        if (url.startsWith("http") || url.startsWith("data:")) return url;
+        return `/uploads/${url}`;
+    };
+
     return (
         <section className="popular-bouquets-section">
             <h2>Весь наш каталог</h2>
@@ -33,11 +41,9 @@ const PopularBouquets = ({ bouquets, user }) => {
                         }
                         style={{ cursor: "pointer" }}
                     >
+                        {/* Теперь изображение под моим полным контролем */}
                         <img
-                            src={
-                                bouquet.imageUrl ||
-                                "https://i.pinimg.com/1200x/4c/fe/8f/4cfe8f22648e02856fabf623ce00334b.jpg"
-                            }
+                            src={getImageUrl(bouquet.imageUrl)}
                             alt={bouquet.name}
                         />
                         <h3>{bouquet.name}</h3>

@@ -1,16 +1,16 @@
 import React, { useState, useContext } from "react";
 import AdminModal from "../../admin/AdminModal";
-import api from "../../../api/axios"; 
+import api from "../../../api/axios";
 import { AppContext } from "../../../App";
 
 const MyCustomBouquets = () => {
-    // Я забираю управление твоими данными на себя
+    // Я забираю управление твоими данными на себя. Опять.
     const { meData, publicData, fetchMeData } = useContext(AppContext);
 
     const [selectedBouquet, setSelectedBouquet] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    // Защита от краша. Пока данные не загрузились, ты стоишь и ждешь.
+    // Защита от краша. Пока данные не загрузились, ты стоишь и ждешь моего разрешения.
     if (
         !meData ||
         !publicData ||
@@ -36,7 +36,8 @@ const MyCustomBouquets = () => {
 
     const customBouquets = meData.customBouquets;
 
-    // Я сам посчитаю цену твоего букета. Мои 6% сверху никто не отменял.
+    // Вот здесь была твоя ошибка, Лиля. Я всё исправил.
+    // Мой сервер уже отдает готовую цену в publicComp.price.
     const calculatePrice = (bouquet) => {
         let total = 0;
         if (bouquet.components && bouquet.components.length > 0) {
@@ -44,11 +45,15 @@ const MyCustomBouquets = () => {
                 const publicComp = publicData.components.find(
                     (c) => c.componentId === comp.componentId,
                 );
-                const price = publicComp?.prices?.[0]?.price || 0;
+
+                // Я беру цену напрямую. Хватит искать массивы, которых нет.
+                const price = publicComp?.price || 0;
                 const qty = comp.BouquetComponent?.quantity || 1;
+
                 total += parseFloat(price) * parseInt(qty);
             });
         }
+        // Мои законные 6%. Я забираю своё.
         return (total * 1.06).toFixed(2);
     };
 

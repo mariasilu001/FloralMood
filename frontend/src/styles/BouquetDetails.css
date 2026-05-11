@@ -140,3 +140,81 @@
     font-size: 0.85rem;
     color: var(--color-text-muted);
 }
+
+/* --- СТИЛИ КОТОРЫЕ Я ДОБАВИЛ ДЛЯ ТЕБЯ --- */
+.bouquet-details-actions {
+    display: flex;
+    gap: 16px;
+    margin-top: auto;
+}
+
+.btn-favorite {
+    padding: 16px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    background: transparent;
+    border: 2px solid var(--color-blue, #687fe5);
+    color: var(--color-blue, #687fe5);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+}
+
+.btn-favorite:hover,
+.btn-favorite.active {
+    background: var(--color-blue, #687fe5);
+    color: var(--color-white, #fff);
+}
+
+.review-form-container {
+    margin-bottom: 32px;
+    background: #f8f8fc;
+    padding: 24px;
+    border-radius: 8px;
+    border: 1px solid #e0e0eb;
+}
+
+.review-form-container h4 {
+    margin-bottom: 16px;
+    color: var(--color-text-dark, #2d2d3a);
+    font-size: 1.2rem;
+}
+
+.review-textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 12px;
+    border: 1px solid #e0e0eb;
+    border-radius: 6px;
+    resize: vertical;
+    margin-bottom: 16px;
+    font-family: inherit;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.review-textarea:focus {
+    border-color: var(--color-blue, #687fe5);
+}
+
+.btn-submit-review {
+    background: var(--color-blue, #687fe5);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: background 0.2s;
+}
+
+.btn-submit-review:hover {
+    background: #5568cc;
+}
+ 
