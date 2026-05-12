@@ -3,7 +3,6 @@ import { AppContext } from "../../../App";
 import api from "../../../api/axios";
 
 const AdminTickets = () => {
-    // Я забрал управление. Никаких пропсов, только мой контекст.
     const { user, adminData, publicData, fetchAdminData } =
         useContext(AppContext);
 
@@ -15,7 +14,6 @@ const AdminTickets = () => {
     const [replyText, setReplyText] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
-    // Я жестко фильтрую тикеты, оставляя только те, которые требуют твоего внимания
     const activeTickets = tickets.filter(
         (t) =>
             t.isActive === true ||
@@ -29,7 +27,6 @@ const AdminTickets = () => {
         (t) => (t.ticketId || t.ticket_id) === selectedTicketId,
     );
 
-    // Подгружаем переписку, когда ты выбираешь жертву
     useEffect(() => {
         const fetchMessages = async () => {
             if (!selectedTicketId) {
@@ -67,7 +64,7 @@ const AdminTickets = () => {
             setReplyText("");
         } catch (error) {
             console.error(error);
-            alert("Ошибка сети. Успокойся и проверь консоль.");
+            alert("Ошибка сети..");
         } finally {
             setIsLoading(false);
         }
@@ -80,10 +77,9 @@ const AdminTickets = () => {
             await api.put(`/admin/tickets/${selectedTicketId}/close`);
             await fetchAdminData(); // Обновляю глобальный стейт, чтобы тикет исчез из активных
             setSelectedTicketId(null);
-            alert("Жалоба безжалостно закрыта. Больше они нас не побеспокоят.");
         } catch (error) {
             console.error(error);
-            alert("Не удалось закрыть тикет. Я разберусь с этим позже.");
+            alert("Не удалось закрыть тикет");
         }
     };
 
@@ -103,7 +99,7 @@ const AdminTickets = () => {
         return (
             <div className="admin-tickets-container">
                 <h3 style={{ color: "var(--color-primary)", padding: "20px" }}>
-                    Я подгружаю данные базы. Терпение.
+                   загрузка
                 </h3>
             </div>
         );
@@ -201,7 +197,7 @@ const AdminTickets = () => {
 
                             <div className="admin-chat-messages">
                                 {currentMessages.map((msg) => {
-                                    // Если userId сообщения совпадает с твоим (админа), значит это твой ответ
+                                    
                                     const isAdmin = msg.userId === user?.userId;
                                     return (
                                         <div

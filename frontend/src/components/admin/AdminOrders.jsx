@@ -12,7 +12,7 @@ function AdminOrders() {
         const token = localStorage.getItem("token");
         const headers = { Authorization: `Bearer ${token}` };
 
-        // Я запрашиваю заказы и статусы параллельно. Не будем заставлять систему ждать.
+        
         Promise.all([
             fetch("/api/admin/orders", { headers }).then((res) => res.json()),
             fetch("/api/admin/order-statuses", { headers }).then((res) =>
@@ -36,7 +36,7 @@ function AdminOrders() {
     const handleModalClose = (updatedOrderId, newStatusObj) => {
         setIsModalOpen(false);
         if (updatedOrderId && newStatusObj) {
-            // Если статус изменился, я обновляю таблицу локально, без лишних запросов к БД
+            
             setOrders((prev) =>
                 prev.map((o) =>
                     o.orderId === updatedOrderId

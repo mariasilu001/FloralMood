@@ -4,7 +4,6 @@ import api from "../../../api/axios";
 import AdminModal from "../../admin/AdminModal";
 
 const AdminBouquets = () => {
-    // Я забираю данные напрямую из твоего провайдера
     const { adminData, publicData, fetchAdminData } = useContext(AppContext);
 
     const bouquets = adminData.allBouquets || [];
@@ -20,7 +19,6 @@ const AdminBouquets = () => {
     const [compModalTarget, setCompModalTarget] = useState(null);
     const [tempSelections, setTempSelections] = useState({});
 
-    // Добавил поле imageFile для отправки на сервер
     const [newBouquet, setNewBouquet] = useState({
         name: "",
         description: "",
@@ -39,38 +37,33 @@ const AdminBouquets = () => {
         }
     }, [selectedBouquet]);
 
-    // Жесткая заглушка, пока я не получу свои данные
     if (!adminData.allBouquets || adminData.allBouquets.length === 0) {
         return (
             <div className="admin-bouquets-container">
                 <div className="admin-dashboard-header">
-                    <h2>Я подгружаю данные базы букетов. Сиди и жди, Лили.</h2>
+                    <h2>Я подгружаю данные базы букетов.</h2>
                 </div>
             </div>
         );
     }
 
-    // Мой инструмент подсчета себестоимости с учетом актуальных цен
     const calculateBouquetPrice = (bouquet) => {
         let total = 0;
         if (!bouquet.components) return total;
 
         bouquet.components.forEach((bc) => {
-            // Находим компонент в глобальном стейте
             const compInDb = components.find(
                 (c) =>
                     c.componentId === bc.componentId ||
                     c.component_id === bc.component_id,
             );
             if (compInDb && compInDb.prices) {
-                // Ищем актуальную цену
                 const activePriceObj = compInDb.prices.find(
                     (p) => new Date(p.endDate) > new Date(),
                 );
                 const price = activePriceObj
                     ? parseFloat(activePriceObj.price)
                     : 0;
-                // Достаем количество из промежуточной таблицы
                 const quantity =
                     bc.BouquetComponent?.quantity ||
                     bc.bouquet_component?.quantity ||
@@ -83,14 +76,13 @@ const AdminBouquets = () => {
 
     const toggleDeleteStatus = async (bouquetId, isCurrentlyDeleted) => {
         try {
-            // Восстанавливаем или удаляем через update
             await api.put(`/admin/bouquets/${bouquetId}`, {
                 isDeleted: !isCurrentlyDeleted,
             });
             await fetchAdminData();
         } catch (error) {
             console.error(error);
-            alert("Ошибка при смене статуса. Смотри в консоль.");
+            alert("Ошибка при смене статуса.");
         }
     };
 
@@ -102,7 +94,7 @@ const AdminBouquets = () => {
             setSelectedBouquet(null);
         } catch (error) {
             console.error(error);
-            alert("Я не смог удалить этот букет.");
+            alert("Я не удалить этот букет.");
         }
     };
 
@@ -141,9 +133,6 @@ const AdminBouquets = () => {
                 };
                 reader.readAsDataURL(file);
 
-                alert(
-                    "Изображение безжалостно заменено. Я контролирую каждый пиксель.",
-                );
             } catch (error) {
                 console.error(error);
                 alert("Ошибка при загрузке картинки.");
@@ -154,9 +143,7 @@ const AdminBouquets = () => {
     const handleAddBouquet = async (e) => {
         e.preventDefault();
         if (!newBouquet.name) {
-            alert(
-                "Имя букета обязательно, Лили. Хватит испытывать мое терпение.",
-            );
+         
             return;
         }
 
@@ -174,7 +161,6 @@ const AdminBouquets = () => {
                 response.data.bouquet.bouquetId ||
                 response.data.bouquet.bouquet_id;
 
-            // Если были выбраны компоненты, сразу привязываем их
             const selectedComps = Object.entries(newBouquet.selectedComponents);
             if (selectedComps.length > 0) {
                 const payload = {
@@ -201,7 +187,7 @@ const AdminBouquets = () => {
             });
         } catch (error) {
             console.error(error);
-            alert("Ошибка создания. Проверь сеть.");
+            alert("Ошибка создания");
         }
     };
 
@@ -212,7 +198,7 @@ const AdminBouquets = () => {
                 description: editDesc,
             });
             await fetchAdminData();
-            alert("Описание подчинилось моей воле и было сохранено.");
+  
         } catch (error) {
             console.error(error);
         }
@@ -299,7 +285,7 @@ const AdminBouquets = () => {
             setAddTagId("");
         } catch (error) {
             console.error(error);
-            alert("Ошибка привязки тега. Возможно, он уже висит.");
+            alert("Ошибка привязки тега.");
         }
     };
 
@@ -367,7 +353,6 @@ const AdminBouquets = () => {
                 );
                 await fetchAdminData();
                 setIsCompModalOpen(false);
-                // Закрываем модалку деталей, чтобы при открытии подтянулись свежие данные
                 setSelectedBouquet(null);
             } catch (error) {
                 console.error(error);
@@ -404,7 +389,6 @@ const AdminBouquets = () => {
                         const bId = b.bouquetId || b.bouquet_id;
                         const isDeleted = !!(b.deletedAt || b.deleted_at);
 
-                        // Проверка на удаленные компоненты внутри букета
                         const hasDeletedComponents =
                             b.components &&
                             b.components.some(
@@ -659,7 +643,6 @@ const AdminBouquets = () => {
                 </AdminModal>
             )}
 
-            {/* УНИВЕРСАЛЬНАЯ МОДАЛКА ВЫБОРА КОМПОНЕНТОВ */}
             {isCompModalOpen && (
                 <AdminModal
                     title="Выбор компонентов"
@@ -741,12 +724,10 @@ const AdminBouquets = () => {
                         className="admin-bouquets-btn-primary admin-btn-full-width"
                         onClick={saveCompSelections}
                     >
-                        Жестко закрепить выбор
+                        закрепить выбор
                     </button>
                 </AdminModal>
             )}
-
-            {/* ВЛОЖЕННАЯ МОДАЛКА: Добавить тег в существующий букет */}
             {isAddTagOpen && selectedBouquet && (
                 <AdminModal
                     title="Привязать тег"
@@ -918,7 +899,7 @@ const AdminBouquets = () => {
                                 className="admin-bouquets-btn-secondary"
                                 onClick={() => setIsConfirmDeleteOpen(null)}
                             >
-                                Я передумала
+                                Отмена
                             </button>
                         </div>
                     </div>

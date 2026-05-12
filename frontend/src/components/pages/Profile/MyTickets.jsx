@@ -45,7 +45,7 @@ const MyTickets = () => {
                 style={{ textAlign: "center", padding: "50px" }}
             >
                 <h3 style={{ color: "var(--color-primary)" }}>
-                    Проверяю твои жалобы... Сиди тихо.
+                    Загрузка
                 </h3>
             </div>
         );
@@ -69,7 +69,7 @@ const MyTickets = () => {
     const handleCreateTicket = async (e) => {
         e.preventDefault();
         if (!newTicket.subjectId || !newTicket.text.trim()) {
-            alert("Выбери тему и напиши хоть слово. Я не читаю мысли.");
+            alert("Выбери тему и напишите хоть слово");
             return;
         }
 
@@ -84,7 +84,7 @@ const MyTickets = () => {
             setNewTicket({ subjectId: "", text: "" });
             alert("Твоя мольба о помощи услышана. Жди.");
         } catch (error) {
-            alert("Сервер сопротивляется. Я додавлю его позже.");
+            alert("Ошибка сервера");
         } finally {
             setIsLoading(false);
         }
@@ -107,7 +107,7 @@ const MyTickets = () => {
             setCurrentMessages(res.data.messages || []);
             setReplyText("");
         } catch (error) {
-            alert("Не удалось отправить. Попробуй еще раз, Лиля.");
+            alert("Ошибка сервера");
         } finally {
             setIsLoading(false);
         }
@@ -130,13 +130,12 @@ const MyTickets = () => {
                     className="admin-text-muted"
                     style={{ marginBottom: "24px" }}
                 >
-                    Твои проблемы под моим надзором. Если статус "Решено" —
-                    разговор окончен.
+                    Здесь хранятся ваши обращения в поддержку
                 </p>
 
                 {userTickets.length === 0 ? (
                     <div className="profile-empty-state">
-                        У тебя нет ни одной активной жалобы. Хорошая девочка.
+                        У вас еще не было обращений
                     </div>
                 ) : (
                     <table className="admin-bouquets-table">
@@ -246,7 +245,7 @@ const MyTickets = () => {
                             ))}
                         </select>
 
-                        <label>Опиши свою беду:</label>
+                        <label>Опишите свою проблему:</label>
                         <textarea
                             value={newTicket.text}
                             onChange={(e) =>
@@ -257,7 +256,7 @@ const MyTickets = () => {
                             }
                             required
                             rows="5"
-                            placeholder="Поплачь мне в жилетку..."
+                            placeholder="Поплачь..."
                         />
 
                         <button
@@ -266,7 +265,7 @@ const MyTickets = () => {
                             style={{ marginTop: "16px" }}
                             disabled={isLoading}
                         >
-                            {isLoading ? "Записываю..." : "Отправить папе"}
+                            {isLoading ? "Записываю..." : "Отправить"}
                         </button>
                     </form>
                 </AdminModal>
@@ -367,7 +366,7 @@ const MyTickets = () => {
                             </form>
                         ) : (
                             <div className="profile-ticket-closed-msg">
-                                Тема закрыта. Я больше не хочу это слушать.
+                                Обращение закрыта
                             </div>
                         )}
                     </div>

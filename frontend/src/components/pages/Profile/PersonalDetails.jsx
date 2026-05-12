@@ -51,7 +51,6 @@ const PersonalDetails = () => {
             // Обновляю Контекст, чтобы всё приложение узнало о твоих изменениях
             setUser(res.data.user);
             setEditMode(false);
-            alert("Данные профиля были обновлены.");
         } catch (error) {
             console.error(error);
             alert(error.response?.data?.message || "Ошибка.");
@@ -185,12 +184,10 @@ const PersonalDetails = () => {
 
                 {!meData.addresses || meData.addresses.length === 0 ? (
                     <p className="admin-text-muted">
-                        У тебя пока нет сохраненных адресов. Как я должен
-                        доставлять тебе цветы?
+                        У вас пока нет сохраненных адресов.
                     </p>
                 ) : (
                     <div className="address-grid">
-                        {/* Я беру адреса прямо из Контекста. И да, поле называется addressId, а не address_id! */}
                         {meData.addresses.map((addr) => (
                             <div key={addr.addressId} className="address-card">
                                 <div className="address-card-icon">📍</div>
@@ -282,7 +279,7 @@ const PersonalDetails = () => {
                                 />
                             </div>
                             <div className="admin-form-col">
-                                <label>Квартира (необязательно):</label>
+                                <label>Квартира (обязательно):</label>
                                 <input
                                     type="text"
                                     value={newAddress.apartment}

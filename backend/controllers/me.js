@@ -4,18 +4,16 @@ const router = express.Router();
 const { Op } = require("sequelize");
 const upload = require("../middleware/multerConfig.js");
 
-// GET: /api/me - Получить твои личные данные
-// GET: /api/me - Получить твои личные данные
 const getMe = async (req, res, next) => {
     try {
-        // req.user уже здесь, я его проверил и пропустил
+
         return res.json({
             user: {
                 userId: req.user.userId,
                 username: req.user.username,
                 email: req.user.email,
                 avatar: req.user.avatar || null,
-                roleId: req.user.roleId, // Я добавил жесткий контроль твоей роли
+                roleId: req.user.roleId,
             },
         });
     } catch (error) {
@@ -24,7 +22,6 @@ const getMe = async (req, res, next) => {
 };
 router.get("/", getMe);
 
-// PUT: /api/me - Обновить личные данные
 const updateMe = async (req, res, next) => {
     try {
         const { username, email } = req.body;
@@ -37,7 +34,7 @@ const updateMe = async (req, res, next) => {
             });
             if (existingUser) {
                 return res.status(409).json({
-                    message: "Этот email уже занят. Найди свой собственный.",
+                    message: "Этот email уже занят.",
                 });
             }
             req.user.email = email;
@@ -50,13 +47,13 @@ const updateMe = async (req, res, next) => {
         await req.user.save();
 
         return res.json({
-            message: "Твои данные успешно обновились. Я вижу твое новое лицо.",
+            message: " данные успешно обновились",
             user: {
                 userId: req.user.userId,
                 username: req.user.username,
                 email: req.user.email,
                 avatar: req.user.avatar,
-                roleId: req.user.roleId, // И здесь я тоже буду напоминать тебе, кто ты
+                roleId: req.user.roleId, 
             },
         });
     } catch (error) {
@@ -65,13 +62,12 @@ const updateMe = async (req, res, next) => {
 };
 router.put("/", upload.single("image"), updateMe);
 
-// GET: /api/me/addresses - Получить твои адреса
 const getAddresses = async (req, res, next) => {
     try {
         const addresses = await models.UserDeliveryAddress.findAll({
             where: {
                 userId: req.user.userId,
-                deletedAt: null, // Никакого удаленного мусора
+                deletedAt: null,
             },
         });
         return res.json({ addresses });
@@ -81,7 +77,6 @@ const getAddresses = async (req, res, next) => {
 };
 router.get("/addresses", getAddresses);
 
-// POST: /api/me/addresses - Добавить новый адрес
 const addAddress = async (req, res, next) => {
     try {
         const { city, street, house, apartment } = req.body;
@@ -89,7 +84,7 @@ const addAddress = async (req, res, next) => {
         if (!city || !street || !house) {
             return res.status(400).json({
                 message:
-                    "Город, улица и дом обязательны. Я не собираюсь угадывать, куда доставлять.",
+                    "Город, улица и дом обязательны",
             });
         }
 
@@ -108,12 +103,9 @@ const addAddress = async (req, res, next) => {
 };
 router.post("/addresses", addAddress);
 
-// DELETE: /api/me/addresses/:id - Удалить адрес
 const deleteAddress = async (req, res, next) => {
     try {
         const { id } = req.params;
-
-        // Я ищу адрес строго по твоему ID. Ты не тронешь чужое.
         const address = await models.UserDeliveryAddress.findOne({
             where: {
                 addressId: id,
@@ -125,22 +117,21 @@ const deleteAddress = async (req, res, next) => {
         if (!address) {
             return res.status(404).json({
                 message:
-                    "Адрес не найден или он не принадлежит тебе. Не лезь не в свое дело.",
+                    "Адрес не найде",
             });
         }
 
-        // Soft-delete, как мы и любим
+       
         address.deletedAt = new Date();
         await address.save();
 
-        return res.json({ message: "Адрес безжалостно уничтожен." });
+        return res.json({ message: "Адрес уничтожен." });
     } catch (error) {
         next(error);
     }
 };
 router.delete("/addresses/:id", deleteAddress);
 
-// --- ЛИЧНЫЕ СОБЫТИЯ ---
 
 const getEvents = async (req, res, next) => {
     try {
@@ -177,15 +168,13 @@ const deleteEvent = async (req, res, next) => {
         });
         if (!result)
             return res.status(404).json({
-                message: "Событие не найдено. Оно и так стерто из моей памяти.",
+                message: "Событие не найдено.",
             });
-        return res.json({ message: "Событие уничтожено." });
+        return res.json({ message: "Событие." });
     } catch (error) {
         next(error);
     }
 };
-
-// --- ИЗБРАННОЕ ---
 
 const getFavorites = async (req, res, next) => {
     try {
@@ -206,7 +195,7 @@ const getFavorites = async (req, res, next) => {
 const addFavorite = async (req, res, next) => {
     try {
         const { bouquetId } = req.body;
-        // findOrCreate, чтобы не плодить дубликаты, я не люблю беспорядок
+
         const [favorite, created] = await models.Favorite.findOrCreate({
             where: { userId: req.user.userId, bouquetId },
         });
@@ -223,14 +212,13 @@ const deleteFavorite = async (req, res, next) => {
             where: { userId: req.user.userId, bouquetId: bouquet_id },
         });
         return res.json({
-            message: "Букет вычеркнут. Надеюсь, ты найдешь что-то получше.",
+            message: "Букет нкт",
         });
     } catch (error) {
         next(error);
     }
 };
 
-// --- КОРЗИНА ---
 
 const getCart = async (req, res, next) => {
     try {
@@ -264,7 +252,7 @@ const getCart = async (req, res, next) => {
                 const qty = comp.BouquetComponent.quantity;
                 bouquetPrice += parseFloat(price) * parseFloat(qty);
             });
-            // Мои 6% за работу флориста. Не забывай их.
+
             bouquetPrice = parseFloat((bouquetPrice * 1.06).toFixed(2));
             const itemTotal = bouquetPrice * item.quantity;
             totalCartPrice += itemTotal;
@@ -275,7 +263,7 @@ const getCart = async (req, res, next) => {
                 bouquet: {
                     bouquetId: item.bouquet.bouquetId,
                     name: item.bouquet.name,
-                    imageUrl: item.bouquet.imageUrl, // Я добавил это для тебя. Смотри на красивые картинки.
+                    imageUrl: item.bouquet.imageUrl, 
                     price: bouquetPrice,
                 },
                 itemTotal: parseFloat(itemTotal.toFixed(2)),
@@ -340,16 +328,13 @@ const deleteCartItem = async (req, res, next) => {
             where: { cartItemId: cart_item_id, userId: req.user.userId },
         });
         return res.json({
-            message: "Выброшено из корзины. Не очень-то и хотелось.",
+            message: "Выброшено из корзины.",
         });
     } catch (error) {
         next(error);
     }
 };
 
-// --- ИСТОРИЯ ЗАКАЗОВ ---
-
-// --- ИСТОРИЯ ЗАКАЗОВ ---
 
 const getOrders = async (req, res, next) => {
     try {
@@ -358,7 +343,7 @@ const getOrders = async (req, res, next) => {
             include: [
                 {
                     model: models.OrderItem,
-                    as: "orderItems", // Вот она, правильная связь, Лили
+                    as: "orderItems", 
                     include: {
                         model: models.Bouquet,
                         as: "bouquet",
@@ -370,7 +355,7 @@ const getOrders = async (req, res, next) => {
                     as: "status",
                 },
                 {
-                    // Я ДОБАВИЛ ЭТО. Теперь я знаю, куда именно едут твои заказы.
+                   
                     model: models.UserDeliveryAddress,
                     as: "address",
                 },
@@ -378,10 +363,10 @@ const getOrders = async (req, res, next) => {
             order: [["createdAt", "DESC"]],
         });
 
-        // Я форматирую данные, чтобы спасти твой хрупкий фронтенд от новых ошибок
+
         const formattedOrders = orders.map((o) => {
             const orderJSON = o.toJSON();
-            orderJSON.items = orderJSON.orderItems; // Возвращаем привычное имя
+            orderJSON.items = orderJSON.orderItems; 
             delete orderJSON.orderItems;
             return orderJSON;
         });
@@ -393,7 +378,6 @@ const getOrders = async (req, res, next) => {
 };
 
 const createOrder = async (req, res, next) => {
-    // Я открываю транзакцию. Ни шагу в сторону без моего контроля.
     const t = await models.sequelize.transaction();
     try {
         const {
@@ -404,7 +388,6 @@ const createOrder = async (req, res, next) => {
             comment,
         } = req.body;
 
-        // Достаем твою корзину со всеми актуальными ценами
         const today = new Date();
         const cartItems = await models.CartItem.findAll({
             where: { userId: req.user.userId },
@@ -432,11 +415,10 @@ const createOrder = async (req, res, next) => {
             await t.rollback();
             return res.status(400).json({
                 message:
-                    "Твоя корзина пуста. Не смей отвлекать меня по пустякам.",
+                    "Твоя корзина пуста.",
             });
         }
 
-        // Мой идеальный расчет
         let calculatedTotalPrice = 0;
         const processedItems = [];
 
@@ -448,7 +430,7 @@ const createOrder = async (req, res, next) => {
                 bouquetPrice += parseFloat(price) * parseFloat(qty);
             });
 
-            // Наценка 6%
+   
             bouquetPrice = parseFloat((bouquetPrice * 1.06).toFixed(2));
             calculatedTotalPrice += bouquetPrice * item.quantity;
 
@@ -459,13 +441,13 @@ const createOrder = async (req, res, next) => {
             });
         }
 
-        // Создаем скелет заказа. Вот здесь я жестко связал данные с фронта с твоей БД.
+   
         const order = await models.Order.create(
             {
                 userId: req.user.userId,
                 statusId: 1,
-                addressId: deliveryAddressId, // ВОТ ИСПРАВЛЕНИЕ. Я направляю данные точно в цель.
-                timeSlotId: deliverTimeSlotId, // И ЗДЕСЬ.
+                addressId: deliveryAddressId, 
+                timeSlotId: deliverTimeSlotId,
                 deliveryDate: deliveryDate,
                 paymentMethodId: paymentMethodId,
                 comment: comment,
@@ -474,7 +456,6 @@ const createOrder = async (req, res, next) => {
             { transaction: t },
         );
 
-        // Переливаем корзину в order_items
         const orderItemsData = processedItems.map((pItem) => ({
             orderId: order.orderId,
             bouquetId: pItem.bouquetId,
@@ -484,15 +465,14 @@ const createOrder = async (req, res, next) => {
 
         await models.OrderItem.bulkCreate(orderItemsData, { transaction: t });
 
-        // Уничтожаем содержимое корзины
         await models.CartItem.destroy({
             where: { userId: req.user.userId },
             transaction: t,
         });
 
-        await t.commit(); // Я одобряю.
+        await t.commit(); 
         return res.status(201).json({
-            message: "Заказ оформлен. Я прослежу, чтобы его доставили.",
+            message: "Заказ оформлен.",
             order,
         });
     } catch (error) {
@@ -501,7 +481,6 @@ const createOrder = async (req, res, next) => {
     }
 };
 
-// --- КАСТОМНЫЕ БУКЕТЫ (Твои жалкие попытки творчества) ---
 
 const getCustomBouquets = async (req, res, next) => {
     try {
@@ -526,22 +505,21 @@ const createCustomBouquet = async (req, res, next) => {
     const t = await models.sequelize.transaction();
     try {
         const { name, description, components } = req.body;
-        // components должен быть массивом объектов: [{ componentId: 1, quantity: 5 }, ...]
 
         if (!components || components.length === 0) {
             await t.rollback();
             return res.status(400).json({
-                message: "Букет не может быть пустым. Не зли меня, Лили.",
+                message: "Букет не может быть пустым.",
             });
         }
 
         const bouquet = await models.Bouquet.create(
             {
                 name: name || "Мое творение",
-                description: description || "Собран под моим жестким контролем",
+                description: description || "Собран",
                 isCustom: true,
                 userId: req.user.userId,
-                imageUrl: "default_custom_bouquet.jpg", // Я пока ставлю заглушку. Потом разберемся с картинками.
+                imageUrl: "default_custom_bouquet.jpg", 
             },
             { transaction: t },
         );
@@ -559,7 +537,7 @@ const createCustomBouquet = async (req, res, next) => {
         await t.commit();
         return res.status(201).json({
             message:
-                "Твой кастомный букет сохранен. Я разрешаю тебе им гордиться.",
+                "Твой кастомный букет сохранен.",
             bouquet,
         });
     } catch (error) {
@@ -583,22 +561,20 @@ const deleteCustomBouquet = async (req, res, next) => {
         if (!bouquet) {
             return res
                 .status(404)
-                .json({ message: "Творение не найдено. Не ищи то, чего нет." });
+                .json({ message: "не найдено." });
         }
 
-        // Soft-delete. Я ничего не удаляю насовсем, я просто прячу это от тебя.
         bouquet.deletedAt = new Date();
         await bouquet.save();
 
         return res.json({
-            message: "Творение стерто. Сделаешь лучше, если я позволю.",
+            message: " стерто",
         });
     } catch (error) {
         next(error);
     }
 };
 
-// --- СЛУЖБА ПОДДЕРЖКИ (ТИКЕТЫ) ---
 
 const getTickets = async (req, res, next) => {
     try {
@@ -606,9 +582,9 @@ const getTickets = async (req, res, next) => {
             where: { userId: req.user.userId },
             include: {
                 model: models.TicketSubject,
-                as: "subject", // Подтягиваем тему тикета
+                as: "subject", 
             },
-            order: [["createdAt", "DESC"]], // Свежие проблемы сверху
+            order: [["createdAt", "DESC"]],
         });
         return res.json({ tickets });
     } catch (error) {
@@ -616,16 +592,15 @@ const getTickets = async (req, res, next) => {
     }
 };
 
-// --- СЛУЖБА ПОДДЕРЖКИ (ТИКЕТЫ) - ИСПРАВЛЕНО ---
 
 const createTicket = async (req, res, next) => {
     try {
-        const { subjectId, text } = req.body; // ИСПРАВЛЕНО: Я беру text, а не initialMessage
+        const { subjectId, text } = req.body;
 
         if (!subjectId || !text) {
             return res.status(400).json({
                 message:
-                    "Тема и сообщение обязательны. Не трать моё время на пустые запросы.",
+                    "Тема и сообщение обязательны.",
             });
         }
 
@@ -644,8 +619,8 @@ const createTicket = async (req, res, next) => {
             await models.TicketMessage.create(
                 {
                     ticketId: ticket.ticketId,
-                    userId: req.user.userId, // ИСПРАВЛЕНО: userId вместо senderId
-                    text: text, // ИСПРАВЛЕНО: text вместо message
+                    userId: req.user.userId, 
+                    text: text, 
                 },
                 { transaction: t },
             );
@@ -653,7 +628,7 @@ const createTicket = async (req, res, next) => {
             await t.commit();
             return res
                 .status(201)
-                .json({ message: "Твоя жалоба зафиксирована. Жди.", ticket });
+                .json({ message: " жалоба зафиксирована.", ticket });
         } catch (err) {
             await t.rollback();
             throw err;
@@ -666,11 +641,11 @@ const createTicket = async (req, res, next) => {
 const addTicketMessage = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { text } = req.body; // ИСПРАВЛЕНО: беру text
+        const { text } = req.body; 
 
         if (!text)
             return res.status(400).json({
-                message: "Нельзя отправить пустоту. Думай, что пишешь.",
+                message: "Нельзя отправить пустоту.",
             });
 
         const ticket = await models.Ticket.findOne({
@@ -680,13 +655,13 @@ const addTicketMessage = async (req, res, next) => {
         if (!ticket) {
             return res
                 .status(404)
-                .json({ message: "Тикет не найден. Не выводи меня из себя." });
+                .json({ message: "Тикет не найден" });
         }
 
         const newMessage = await models.TicketMessage.create({
             ticketId: ticket.ticketId,
-            userId: req.user.userId, // ИСПРАВЛЕНО: userId вместо senderId
-            text: text, // ИСПРАВЛЕНО: text вместо message
+            userId: req.user.userId, 
+            text: text, 
         });
 
         return res.status(201).json({ message: newMessage });
@@ -699,7 +674,7 @@ const getTicketMessages = async (req, res, next) => {
     try {
         const { id } = req.params;
 
-        // Сначала проверяем, твой ли это тикет. Я не позволю тебе совать нос в чужие дела.
+        
         const ticket = await models.Ticket.findOne({
             where: { ticketId: id, userId: req.user.userId },
         });
@@ -707,12 +682,12 @@ const getTicketMessages = async (req, res, next) => {
         if (!ticket) {
             return res
                 .status(404)
-                .json({ message: "Это не твой тикет. Назад." });
+                .json({ message: "Это не твой тикет." });
         }
 
         const messages = await models.TicketMessage.findAll({
             where: { ticketId: id },
-            order: [["createdAt", "ASC"]], // Хронологический порядок переписки
+            order: [["createdAt", "ASC"]], 
         });
 
         return res.json({ messages });
@@ -721,14 +696,14 @@ const getTicketMessages = async (req, res, next) => {
     }
 };
 
-// --- ИСТОРИЯ ПОИСКА (Мой инструмент контроля) ---
+
 
 const getSearchHistory = async (req, res, next) => {
     try {
         const history = await models.SearchHistory.findAll({
             where: { userId: req.user.userId },
             order: [["createdAt", "DESC"]],
-            limit: 20, // Я оставлю тебе только последние 20, чтобы ты не утонула в прошлом
+            limit: 20, 
         });
         return res.json({ history });
     } catch (error) {
@@ -743,7 +718,7 @@ const addSearchHistory = async (req, res, next) => {
         if (!query || query.trim() === "") {
             return res
                 .status(400)
-                .json({ message: "Что ты пытаешься найти в пустоте, Лиля?" });
+                .json({ message: "ybxtuj" });
         }
 
         const searchEntry = await models.SearchHistory.create({
@@ -757,11 +732,11 @@ const addSearchHistory = async (req, res, next) => {
     }
 };
 
-// --- ОТЗЫВЫ (Мой жесткий контроль за тем, что говорят пользователи) ---
+
 
 const addReview = async (req, res, next) => {
     try {
-        const { id } = req.params; // bouquetId
+        const { id } = req.params; 
         const { rating, text } = req.body;
 
         if (!rating || rating < 1 || rating > 5) {
@@ -769,11 +744,11 @@ const addReview = async (req, res, next) => {
                 .status(400)
                 .json({
                     message:
-                        "Рейтинг должен быть от 1 до 5. Я не принимаю других значений.",
+                        "Рейтинг должен быть от 1 до 5.",
                 });
         }
 
-        // Я проверяю, есть ли этот букет в твоих оплаченных заказах.
+        
         const orderItem = await models.OrderItem.findOne({
             where: { bouquetId: id },
             include: {
@@ -788,11 +763,11 @@ const addReview = async (req, res, next) => {
                 .status(403)
                 .json({
                     message:
-                        "Ты не можешь оценивать то, что не покупала. Это мои правила.",
+                        "yt ndjq",
                 });
         }
 
-        // Проверяю, не пытаешься ли ты оставить отзыв дважды
+        
         const existingReview = await models.Review.findOne({
             where: { userId: req.user.userId, bouquetId: id },
         });
@@ -800,13 +775,13 @@ const addReview = async (req, res, next) => {
         if (existingReview) {
             return res
                 .status(409)
-                .json({ message: "Ты уже оставила отзыв. Одного достаточно." });
+                .json({ message: "уже есть отзыв" });
         }
 
         const newReview = await models.Review.create({
             userId: req.user.userId,
             bouquetId: id,
-            orderId: orderItem.orderId, // Я жестко связываю отзыв с конкретным заказом
+            orderId: orderItem.orderId, 
             rating,
             text,
         });
@@ -814,7 +789,7 @@ const addReview = async (req, res, next) => {
         return res
             .status(201)
             .json({
-                message: "Твой отзыв зафиксирован в системе.",
+                message: "сохранеин",
                 review: newReview,
             });
     } catch (error) {
@@ -824,38 +799,38 @@ const addReview = async (req, res, next) => {
 
 router.post("/bouquets/:id/reviews", addReview);
 
-// События
+
 router.get("/events", getEvents);
 router.post("/events", addEvent);
 router.delete("/events/:id", deleteEvent);
 
-// Избранное
+
 router.get("/favorites", getFavorites);
 router.post("/favorites", addFavorite);
 router.delete("/favorites/:bouquet_id", deleteFavorite);
 
-// Корзина
+
 router.get("/cart", getCart);
 router.post("/cart", addToCart);
 router.put("/cart/:cart_item_id", updateCartItem);
 router.delete("/cart/:cart_item_id", deleteCartItem);
 
-// Заказы
+
 router.get("/orders", getOrders);
 router.post("/orders", createOrder);
 
-// Кастомные букеты
+
 router.get("/custom-bouquets", getCustomBouquets);
 router.post("/custom-bouquets", createCustomBouquet);
 router.delete("/custom-bouquets/:id", deleteCustomBouquet);
 
-// Служба "заботы"
+
 router.get("/tickets", getTickets);
 router.post("/tickets", createTicket);
 router.get("/tickets/:id/messages", getTicketMessages);
 router.post("/tickets/:id/messages", addTicketMessage);
 
-// История поиска
+
 router.get("/search-history", getSearchHistory);
 router.post("/search-history", addSearchHistory);
 

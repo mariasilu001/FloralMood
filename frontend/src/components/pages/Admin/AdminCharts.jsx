@@ -19,11 +19,9 @@ import {
 } from "recharts";
 
 const AdminCharts = () => {
-    // Мой контекст теперь работает правильно
     const { adminData, setAdminData } = useContext(AppContext);
     const [revenuePeriod, setRevenuePeriod] = useState("day");
 
-    // Цвета из твоей палитры.
     const COLORS = ["#f26076", "#1a1a2e", "#ebd6fb", "#fcd8cd", "#5e5e7a"];
 
     useEffect(() => {
@@ -32,13 +30,12 @@ const AdminCharts = () => {
                 const res = await api.get(
                     `/admin/stats/revenue?period=${revenuePeriod}`,
                 );
-                // Теперь эта функция существует, и я обновляю данные
                 setAdminData((prev) => ({
                     ...prev,
                     revenueStats: res.data.data,
                 }));
             } catch (error) {
-                console.error("Не зли меня своими ошибками сети:", error);
+                console.error(error);
             }
         };
         fetchRevenue();
@@ -54,7 +51,7 @@ const AdminCharts = () => {
     return (
         <div className="admin-dashboard-container">
             <div className="admin-dashboard-header">
-                <h2>Аналитика FloralMood. Мой контроль.</h2>
+                <h2>Аналитика FloralMood.</h2>
                 <div className="admin-stat-widget">
                     <span className="admin-stat-label">
                         Средний рейтинг магазина:
@@ -87,7 +84,6 @@ const AdminCharts = () => {
                             </button>
                         </div>
                     </div>
-                    {/* Я ЖЕСТКО ЗАДАЛ ВЫСОТУ. БОЛЬШЕ НИКАКИХ СХЛОПЫВАНИЙ. */}
                     <div
                         className="admin-chart-wrapper"
                         style={{ minHeight: "350px", width: "100%" }}

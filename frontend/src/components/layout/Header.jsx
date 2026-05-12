@@ -7,18 +7,16 @@ const Header = () => {
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = useState("");
 
-    // Я беру пользователя напрямую
     const { user, fetchMeData } = useContext(AppContext);
 
     const handleSearch = async (e) => {
         e.preventDefault();
         if (!searchQuery.trim()) return;
 
-        // Если ты вошла в систему, я записываю твой поиск в базу
         if (user) {
             try {
                 await api.post("/me/search-history", { query: searchQuery });
-                fetchMeData(); // Обновляем историю в фоне
+                fetchMeData();
             } catch (error) {
                 console.error("Ошибка сохранения истории поиска:", error);
             }
@@ -115,7 +113,6 @@ const Header = () => {
                         </>
                     ) : (
                         <div className="auth-buttons">
-                            {/* Я поправил пути на те, что прописаны в App.jsx */}
                             <Link to="/login" className="btn-login">
                                 Войти
                             </Link>

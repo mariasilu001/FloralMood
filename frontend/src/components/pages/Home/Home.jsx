@@ -18,7 +18,7 @@ const Home = () => {
                     color: "#f26076",
                 }}
             >
-                <h2>Стой смирно, Лили. Я проверяю твой доступ...</h2>
+                <h2>Загрузка</h2>
             </div>
         );
     }
@@ -33,7 +33,7 @@ const Home = () => {
                     color: "#f26076",
                 }}
             >
-                <h2>Я собираю данные для тебя. Жди и не отвлекай меня.</h2>
+                <h2>Загрузка</h2>
             </div>
         );
     }
@@ -59,7 +59,7 @@ const Home = () => {
         });
     }, [bouquets]);
 
-    // Вычисляем ближайший праздник, Лиля
+    // Вычисляем ближайший праздник
     const { closestEvent, recommendedBouquets } = useMemo(() => {
         const allEvents = [...globalEvents, ...myEvents];
         if (!allEvents.length)

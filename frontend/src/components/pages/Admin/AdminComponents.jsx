@@ -4,7 +4,6 @@ import api from "../../../api/axios";
 import AdminModal from "../../admin/AdminModal";
 
 const AdminComponents = () => {
-    // Я беру управление данными в свои руки
     const { adminData, publicData, fetchAdminData } = useContext(AppContext);
 
     const components = adminData.allComponents || [];
@@ -19,7 +18,6 @@ const AdminComponents = () => {
 
     const [editData, setEditData] = useState({});
 
-    // Поле imageFile для отправки на бэкенд
     const [newComp, setNewComp] = useState({
         name: "",
         description: "",
@@ -38,12 +36,11 @@ const AdminComponents = () => {
         }
     }, [selectedComponent]);
 
-    // Моя заглушка. Никто не увидит пустой экран, пока я не загружу данные.
     if (!components || components.length === 0) {
         return (
             <div className="admin-bouquets-container">
                 <div className="admin-dashboard-header">
-                    <h2>Я провожу инвентаризацию склада. Стой и жди, Лиля.</h2>
+                    <h2>Загрузка</h2>
                 </div>
             </div>
         );
@@ -55,9 +52,6 @@ const AdminComponents = () => {
         return `/uploads/${url}`;
     };
 
-    // ==========================================
-    // ЛОГИКА СОЗДАНИЯ КОМПОНЕНТА
-    // ==========================================
     const handleNewImageUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -76,7 +70,7 @@ const AdminComponents = () => {
         e.preventDefault();
         if (!newComp.name || !newComp.category_id || !newComp.initial_price) {
             alert(
-                "Имя, категория и первая цена обязательны, Лили. Я не работаю с пустотой.",
+                "Имя, категория и первая цена обязательны",
             );
             return;
         }
@@ -104,16 +98,14 @@ const AdminComponents = () => {
                 unit: "шт",
                 initial_price: "",
             });
-            alert("Новый компонент зафиксирован в базе.");
+  
         } catch (error) {
             console.error(error);
-            alert("Ошибка сети. Успокойся, проверим консоль.");
+            alert("Ошибка сети.");
         }
     };
 
-    // ==========================================
-    // ЛОГИКА РЕДАКТИРОВАНИЯ И УДАЛЕНИЯ КОМПОНЕНТА
-    // ==========================================
+
     const handleEditImageUpload = (e) => {
         const file = e.target.files[0];
         if (file) {
@@ -150,7 +142,6 @@ const AdminComponents = () => {
 
             await api.put(`/admin/components/${compId}`, formData);
             await fetchAdminData();
-            alert("Компонент жестко обновлен. Твои изменения сохранены.");
         } catch (error) {
             console.error(error);
             alert("Ошибка сохранения.");
@@ -191,9 +182,6 @@ const AdminComponents = () => {
         }
     };
 
-    // ==========================================
-    // ЛОГИКА ИСТОРИИ ЦЕН
-    // ==========================================
     const handleAddPrice = async () => {
         if (!newPriceVal || isNaN(newPriceVal) || newPriceVal <= 0) {
             alert("Введи корректную цену.");
@@ -227,7 +215,6 @@ const AdminComponents = () => {
         }
     };
 
-    // Вычисляем текущую активную цену из массива prices
     const getCurrentPrice = (comp) => {
         if (!comp.prices || comp.prices.length === 0) return 0;
         const today = new Date();
@@ -238,7 +225,6 @@ const AdminComponents = () => {
         return activePrice ? activePrice.price : comp.prices[0].price;
     };
 
-    // Актуальные цены выбранного компонента (обновляются вместе с глобальным стейтом)
     const selectedCompInDb = selectedComponent
         ? components.find(
               (c) =>
@@ -767,7 +753,7 @@ const AdminComponents = () => {
                                 className="admin-bouquets-btn-secondary"
                                 onClick={() => setIsConfirmDeleteOpen(null)}
                             >
-                                Я передумала
+                               Отмена
                             </button>
                         </div>
                     </div>
@@ -781,7 +767,7 @@ const AdminComponents = () => {
                     onClose={() => setIsConfirmPriceDeleteOpen(null)}
                 >
                     <div className="admin-bouquets-confirm">
-                        <p>Ты хочешь стереть эту цену из истории? Уверена?</p>
+                        <p>Ты хочешь стереть цену?</p>
                         <div className="admin-bouquets-modal-controls">
                             <button
                                 className="admin-bouquets-btn-delete"

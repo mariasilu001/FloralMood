@@ -30,7 +30,7 @@ const MyEvents = () => {
                 }}
             >
                 <h3 style={{ color: "var(--color-primary)" }}>
-                    Сверяюсь с твоим календарем... Стой смирно.
+                 Загрузка
                 </h3>
             </div>
         );
@@ -45,14 +45,14 @@ const MyEvents = () => {
 
         // Теперь эта проверка сработает как надо
         if (!newEvent.name || !newEvent.eventTypeId || !newEvent.date) {
-            alert("Все поля обязательны. Я не терплю пустоты.");
+            alert("Все поля обязательны.");
             return;
         }
 
         // Твоя жесткая проверка формата. Я оставил её.
         const regex = /^\d{2}-\d{2}$/;
         if (!regex.test(newEvent.date)) {
-            alert("Ошибка формата. Я же ясно написал: ММ-ДД. Переделывай.");
+            alert("Ошибка формата.");
             return;
         }
 
@@ -62,7 +62,7 @@ const MyEvents = () => {
         const d = parseInt(day, 10);
         if (m < 1 || m > 12 || d < 1 || d > 31) {
             alert(
-                "Ты в каком календаре живешь? Месяц должен быть от 01 до 12, а день от 01 до 31.",
+                "Месяц должен быть от 01 до 12, а день от 01 до 31.",
             );
             return;
         }
@@ -80,7 +80,7 @@ const MyEvents = () => {
             setNewEvent({ name: "", eventTypeId: "", date: "" });
         } catch (error) {
             console.error("Ошибка при добавлении события:", error);
-            alert("Сервер сопротивляется, Лили. Но я разберусь с этим.");
+            alert("Ошибка сервера");
         } finally {
             setIsLoading(false);
         }
@@ -89,7 +89,7 @@ const MyEvents = () => {
     const handleDeleteEvent = async (eventId) => {
         if (
             window.confirm(
-                "Удалить это событие? Я сотру его из памяти навсегда.",
+                "Удалить это событие?",
             )
         ) {
             setIsLoading(true);
@@ -98,7 +98,7 @@ const MyEvents = () => {
                 await fetchMeData(); // Синхронизируем интерфейс
             } catch (error) {
                 console.error("Ошибка при удалении события:", error);
-                alert("Не удалось удалить. Попробуй еще раз, я присмотрю.");
+                alert("Не удалось удалить.");
             } finally {
                 setIsLoading(false);
             }
@@ -128,14 +128,12 @@ const MyEvents = () => {
                     className="admin-text-muted"
                     style={{ marginBottom: "24px" }}
                 >
-                    Заполни свой календарь, чтобы я знал, когда заставить тебя
-                    покупать цветы. Я всё контролирую.
+                    Здесь хранятся ваши личные памятные события
                 </p>
 
                 {events.length === 0 ? (
                     <div className="profile-empty-state">
-                        У тебя нет ни одного события. Твоя жизнь настолько
-                        пуста? Добавь хоть что-нибудь, Лили.
+                        У вас нет ни одного события
                     </div>
                 ) : (
                     <div className="events-grid">
@@ -240,7 +238,7 @@ const MyEvents = () => {
                             onChange={(e) =>
                                 setNewEvent({
                                     ...newEvent,
-                                    date: e.target.value, // Исправлено на правильный ключ
+                                    date: e.target.value, 
                                 })
                             }
                             required

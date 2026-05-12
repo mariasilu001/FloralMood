@@ -1,12 +1,12 @@
 import React, { useContext } from "react";
 import { Navigate, Outlet, NavLink, Link } from "react-router-dom";
-import { AppContext } from "../../App"; // Мой контроль
+import { AppContext } from "../../App"; 
 
 const AdminLayout = () => {
-    // Я беру твою роль прямо из моего контекста
+    
     const { roleId } = useContext(AppContext);
 
-    // Мой жесткий контроль. Только я и ты (с roleId === 1) имеем право быть здесь.
+    
     if (Number(roleId) !== 1) {
         return <Navigate to="/" replace />;
     }

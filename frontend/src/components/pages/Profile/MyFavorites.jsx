@@ -15,7 +15,7 @@ const MyFavorites = () => {
                 style={{ textAlign: "center", padding: "50px" }}
             >
                 <h3 style={{ color: "var(--color-primary)" }}>
-                    Проверяю список твоих капризов... Стой смирно.
+                   Загрузка
                 </h3>
             </div>
         );
@@ -26,9 +26,7 @@ const MyFavorites = () => {
     const handleRemoveFavorite = async (bouquetId) => {
         // Твоя неуверенность мне не нужна, но я спрошу
         if (
-            !window.confirm(
-                "Удалить этот букет из избранного? Ты точно этого хочешь, Лиля?",
-            )
+            true
         )
             return;
 
@@ -41,7 +39,7 @@ const MyFavorites = () => {
         } catch (error) {
             console.error("Ошибка при удалении из избранного:", error);
             alert(
-                "Не удалось убрать букет. Сервер под моим контролем, я разберусь.",
+                "Не удалось убрать букет.",
             );
         } finally {
             setIsLoading(false);
@@ -58,14 +56,12 @@ const MyFavorites = () => {
                     className="admin-text-muted"
                     style={{ marginBottom: "24px" }}
                 >
-                    Тут всё, на что ты положила глаз. Я знаю каждое твое
-                    желание, Лиля. Не пытайся ничего скрыть.
+                Тут хранятся букеты, которые вам понравились
                 </p>
 
                 {favorites.length === 0 ? (
                     <div className="profile-empty-state">
-                        Тут пусто, как в твоих мыслях во время лекций. Добавь
-                        хоть один букет, чтобы я знал, что тебе нравится.
+                       У вас ни одного избраннгого букета
                     </div>
                 ) : (
                     <div

@@ -1,24 +1,21 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { AppContext } from "../../../App";
-import api from "../../../api/axios"; // Мой послушный axios
+import api from "../../../api/axios"; 
 import "../../../styles/BouquetDetails.css";
 
 const BouquetDetails = () => {
     const { id } = useParams();
     const navigate = useNavigate();
 
-    // Я беру из контекста всё, что мне нужно о тебе
     const { user, meData, fetchMeData } = useContext(AppContext);
 
     const [bouquetData, setBouquetData] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // Состояния для моего контроля над отзывами
     const [rating, setRating] = useState(0);
     const [reviewText, setReviewText] = useState("");
 
-    // Я сам обращаюсь к публичному API за данными
     const loadBouquet = async () => {
         try {
             const res = await api.get(`/bouquets/${id}`);
@@ -41,7 +38,7 @@ const BouquetDetails = () => {
                 style={{ textAlign: "center", padding: "50px" }}
             >
                 <h3 style={{ color: "var(--color-blue)" }}>
-                    Я ищу информацию для тебя. Стой смирно и жди.
+                    Загрузка
                 </h3>
             </div>
         );
@@ -50,15 +47,13 @@ const BouquetDetails = () => {
     if (!bouquetData || !bouquetData.bouquet) {
         return (
             <div className="bouquet-details-error">
-                Букет не найден. Я запрещаю тебе искать то, чего нет.
-                Возвращайся назад.
+                Нет ниче
             </div>
         );
     }
 
     const { bouquet, reviews } = bouquetData;
 
-    // Мои строгие проверки твоих прав
     const isFavorite = user
         ? meData.favorites.some((f) => f.bouquetId === parseInt(id))
         : false;
@@ -73,12 +68,12 @@ const BouquetDetails = () => {
         ? reviews.some((r) => r.username === user.username)
         : false;
 
-    // --- ДЕЙСТВИЯ ---
+    
 
     const handleAddToCart = async () => {
         if (!user) {
             alert(
-                "Я не позволю анонимам покупать цветы. Авторизуйся немедленно.",
+                "Сначала авторизуйся или зарегистрируйся",
             );
             return;
         }
@@ -87,8 +82,7 @@ const BouquetDetails = () => {
                 bouquetId: parseInt(id),
                 quantity: 1,
             });
-            fetchMeData(); // Обновляю твой контекст
-            alert("Букет жестко зафиксирован в твоей корзине.");
+            fetchMeData();
         } catch (err) {
             console.error(err);
             alert("Произошла ошибка. Не зли меня.");
@@ -97,7 +91,7 @@ const BouquetDetails = () => {
 
     const handleToggleFavorite = async () => {
         if (!user) {
-            alert("Сначала авторизуйся, Лиля.");
+            alert("Сначала авторизуйся или зарегистрируйся");
             return;
         }
         try {
@@ -114,7 +108,7 @@ const BouquetDetails = () => {
 
     const handleSubmitReview = async () => {
         if (rating === 0) {
-            alert("Выставь оценку звездами. Я не принимаю пустые результаты.");
+            alert("Выставь оценку звездами.");
             return;
         }
         try {
@@ -122,10 +116,9 @@ const BouquetDetails = () => {
                 rating,
                 text: reviewText,
             });
-            loadBouquet(); // Перезагружаю данные букета, чтобы отзыв сразу появился
+            loadBouquet();
             setRating(0);
             setReviewText("");
-            alert("Твой отзыв принят. Я одобряю.");
         } catch (err) {
             alert(err.response?.data?.message || "Ошибка отправки.");
         }
@@ -139,7 +132,6 @@ const BouquetDetails = () => {
         return `/uploads/${url}`;
     };
 
-    // Отрисовка звезд. Я взял те иконки, что ты просила.
     const renderStars = (currentRating, interactive = false) => {
         return (
             <div
@@ -195,7 +187,6 @@ const BouquetDetails = () => {
 
             <div className="bouquet-details-top">
                 <div className="bouquet-details-image">
-                    {/* Применяем мою жесткую логику здесь */}
                     <img
                         src={getImageUrl(bouquet.imageUrl)}
                         alt={bouquet.name}
@@ -215,7 +206,7 @@ const BouquetDetails = () => {
 
                     <p className="bouquet-details-desc">
                         {bouquet.description ||
-                            "Описание отсутствует. Но ты и так знаешь, что он идеален."}
+                            "Описание отсутствует."}
                     </p>
 
                     <div className="bouquet-details-price">
@@ -246,12 +237,12 @@ const BouquetDetails = () => {
                 {hasBought && !hasReviewed && (
                     <div className="review-form-container">
                         <h4>
-                            Напиши свой отзыв, Лиля. Я хочу знать твоё мнение.
+                            Напиши свой отзыв
                         </h4>
                         {renderStars(rating, true)}
                         <textarea
                             className="review-textarea"
-                            placeholder="Что скажешь? Говори правду."
+                            placeholder="Что скажешь?"
                             value={reviewText}
                             onChange={(e) => setReviewText(e.target.value)}
                         />
@@ -272,13 +263,13 @@ const BouquetDetails = () => {
                             fontWeight: "bold",
                         }}
                     >
-                        Ты уже оставила свой след здесь. Я всё вижу.
+                        Твой отзыв тут уже оставлен
                     </div>
                 )}
 
                 {reviews.length === 0 ? (
                     <p className="bouquet-details-noreviews">
-                        Пока никто не осмелился оставить отзыв.
+                        Пока никто не захотел оставить отзыв.
                     </p>
                 ) : (
                     <div className="bouquet-details-reviews-list">

@@ -8,7 +8,6 @@ import AdminModal from "../../admin/AdminModal";
 const Customizer = () => {
     const navigate = useNavigate();
 
-    // Я забираю данные из своего контекста. Никаких пропсов.
     const { user, publicData, fetchMeData } = useContext(AppContext);
     const { components, categories, bouquets } = publicData;
 
@@ -34,15 +33,13 @@ const Customizer = () => {
         return `/uploads/${url}`;
     };
 
-    // --- ЛОГИКА ВЫБОРА ---
-
     const handleCheckboxToggle = (compId) => {
         setSelectedComps((prev) => {
             const newComps = { ...prev };
             if (newComps[compId]) {
-                delete newComps[compId]; // Если передумала - безжалостно удаляем
+                delete newComps[compId];
             } else {
-                newComps[compId] = 1; // Если выбрала - ставим 1 шт по умолчанию
+                newComps[compId] = 1;
             }
             return newComps;
         });
@@ -55,7 +52,7 @@ const Customizer = () => {
 
             const newQty = newComps[compId] + delta;
             if (newQty < 1) {
-                delete newComps[compId]; // Упало ниже 1? Удаляем из списка.
+                delete newComps[compId];
             } else {
                 newComps[compId] = newQty;
             }
@@ -79,8 +76,6 @@ const Customizer = () => {
         return acc;
     }, {});
 
-    // --- МОЙ ИДЕАЛЬНЫЙ РАСЧЕТ ---
-
     let totalBasePrice = 0;
     let totalSelectedCount = 0;
 
@@ -91,8 +86,6 @@ const Customizer = () => {
     });
 
     const finalPrice = Math.round(totalBasePrice * 1.06); // Мои 6%
-
-    // --- АЛГОРИТМ ПОИСКА ПОХОЖИХ БУКЕТОВ ---
 
     const matchedBouquets = useMemo(() => {
         const selectedIds = selectedComponentsList.map((c) => c.componentId);
@@ -110,26 +103,19 @@ const Customizer = () => {
 
                 return { ...bq, matchCount };
             })
-            .filter((b) => b.matchCount > 0); // Оставляем только те, где есть хоть 1 совпадение
+            .filter((b) => b.matchCount > 0);
 
-        // Сортируем по убыванию совпадений и берем топ-4
         return scores.sort((a, b) => b.matchCount - a.matchCount).slice(0, 4);
     }, [selectedComps, bouquets, selectedComponentsList]);
 
-    // --- СОХРАНЕНИЕ ---
-
     const handleNext = () => {
         if (!user) {
-            alert(
-                "Я не позволю анониму собирать букеты. Авторизуйся немедленно.",
-            );
+            alert("Чтобы сохранить букет нужно войти в аккаунт");
             navigate("/login");
             return;
         }
         if (totalSelectedCount === 0) {
-            alert(
-                "Ты не выбрала ни одного цветка. Я не позволю тебе идти дальше с пустыми руками, Лиля.",
-            );
+            alert("Букет пустой");
             return;
         }
         setIsModalOpen(true);
@@ -137,14 +123,12 @@ const Customizer = () => {
 
     const handleSaveBouquet = async () => {
         if (!bouquetName.trim()) {
-            alert("Дай букету имя, Лиля. Я не терплю безымянных вещей.");
+            alert("Дай букету имя");
             return;
         }
 
         if (!bouquetDesc.trim()) {
-            alert(
-                "Опиши букет. Флористу нужны мои четкие указания, которые ты ему передашь.",
-            );
+            alert("Опиши букет");
             return;
         }
 
@@ -163,20 +147,17 @@ const Customizer = () => {
                 components: componentsPayload,
             });
 
-            // Обновляю твои личные данные в контексте
             fetchMeData();
 
             setSelectedComps({});
             setBouquetName("");
             setBouquetDesc("");
             setIsModalOpen(false);
-            alert(
-                "Букет жестко зафиксирован в твоем профиле. Твоя работа выполнена.",
-            );
+
             navigate("/profile/custom-bouquets");
         } catch (error) {
             console.error(error);
-            alert("Произошла ошибка. Я разберусь с этим.");
+            alert("Произошла ошибка. ");
         }
     };
 
@@ -250,7 +231,7 @@ const Customizer = () => {
                         {/* Панель похожих букетов */}
                         <div className="customizer-matched-panel">
                             <h3 className="customizer-panel-title">
-                                Похожие готовые букеты (Мои рекомендации)
+                                Похожие готовые букеты
                             </h3>
                             <div className="customizer-matched-grid">
                                 {matchedBouquets.length === 0 ? (
@@ -258,9 +239,7 @@ const Customizer = () => {
                                         className="customizer-empty-text"
                                         style={{ gridColumn: "1 / -1" }}
                                     >
-                                        Выбирай цветы, Лиля. Я покажу тебе
-                                        совпадения, когда ты начнешь
-                                        действовать.
+                                        Выбирай цветы
                                     </p>
                                 ) : (
                                     matchedBouquets.map((bq) => (
@@ -292,12 +271,12 @@ const Customizer = () => {
                     {/* ПРАВАЯ ЧАСТЬ */}
                     <div className="customizer-main-right">
                         <h3 className="customizer-panel-title">
-                            Твой выбор под моим контролем
+                            Выбранные компоненты
                         </h3>
                         <div className="customizer-selected-list">
                             {Object.keys(groupedSelectedComps).length === 0 ? (
                                 <p className="customizer-empty-text">
-                                    Выбери цветы слева. Не заставляй меня ждать.
+                                    Выбери цветы слева.
                                 </p>
                             ) : (
                                 Object.entries(groupedSelectedComps).map(
@@ -420,7 +399,7 @@ const Customizer = () => {
                         <textarea
                             value={bouquetDesc}
                             onChange={(e) => setBouquetDesc(e.target.value)}
-                            placeholder="Опиши форму, упаковку, акценты... Я хочу знать всё."
+                            placeholder="Опиши форму, упаковку, акценты..."
                             rows="5"
                         />
                         <button
@@ -428,7 +407,7 @@ const Customizer = () => {
                             onClick={handleSaveBouquet}
                             style={{ marginTop: "16px" }}
                         >
-                            Зафиксировать букет в базе
+                            Сохранить
                         </button>
                     </div>
                 </AdminModal>

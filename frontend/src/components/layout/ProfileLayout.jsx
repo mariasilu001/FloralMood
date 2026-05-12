@@ -4,31 +4,27 @@ import { AppContext } from "../../App";
 import api from "../../api/axios";
 
 const ProfileLayout = () => {
-    // Вся твоя жизнь теперь лежит здесь
     const { user, setUser } = useContext(AppContext);
 
-    // Этот предохранитель уже есть в App.jsx, но пусть будет, чтобы не было ошибок рендера
     if (!user) return null;
 
-    // Мой правильный загрузчик аватарок
     const handleAvatarChange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
         const formData = new FormData();
-        formData.append("image", file); // Мой бэкенд ждет файл в поле image
-        // Нам нужно отправить put запрос на /me. Я передаю старые данные, чтобы они не стерлись
+        formData.append("image", file); 
         formData.append("username", user.username);
         if (user.email) formData.append("email", user.email);
 
         try {
-            // Отправляем файл на сервер
+            
             const res = await api.put("/me", formData, {
                 headers: { "Content-Type": "multipart/form-data" },
             });
-            // Обновляем контекст, чтобы новая картинка появилась везде
+            
             setUser(res.data.user);
-            alert("Аватар обновлен. Теперь ты выглядишь приемлемо.");
+      
         } catch (error) {
             console.error(error);
             alert(
@@ -52,7 +48,7 @@ const ProfileLayout = () => {
                             style={{ display: "none" }}
                         />
                         <div className="profile-avatar">
-                            {/* Картинка тянется из папки uploads моего сервера */}
+                       
                             {user.avatar ? (
                                 <img
                                     src={`http://localhost:3000/uploads/${user.avatar}`}

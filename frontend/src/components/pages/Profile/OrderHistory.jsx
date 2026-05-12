@@ -18,7 +18,7 @@ const OrderHistory = () => {
                 style={{ textAlign: "center", padding: "50px" }}
             >
                 <h3 style={{ color: "var(--color-primary)" }}>
-                    Ищу твои чеки в архивах... Не смей прерывать меня.
+                    Загрузка
                 </h3>
             </div>
         );
@@ -42,14 +42,12 @@ const OrderHistory = () => {
                     className="admin-text-muted"
                     style={{ marginBottom: "24px" }}
                 >
-                    Я помню каждый цветок, который ты купила. Твои заказы — под
-                    моим надзором.
+                    Здесь хранится история ваших заказов
                 </p>
 
                 {orders.length === 0 ? (
                     <div className="profile-empty-state">
-                        Тут пусто, Лиля. Твоя история еще не написана. Иди в
-                        каталог.
+                       Пусто
                     </div>
                 ) : (
                     <div className="orders-list">
@@ -102,7 +100,6 @@ const OrderHistory = () => {
                 )}
             </div>
 
-            {/* ТВОЯ МОДАЛКА. Я вернул её, как ты и просила. */}
             {isModalOpen && selectedOrder && (
                 <AdminModal
                     title={`Детали заказа №${selectedOrder.orderId}`}

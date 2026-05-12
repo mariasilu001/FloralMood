@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import ReactDOM from "react-dom";
 
 function AdminOrderModal({ isOpen, onClose, order, statuses }) {
-    // Я задаю стейт на основе текущего статуса
+    
     const [selectedStatusId, setSelectedStatusId] = useState(order?.statusId || "");
     const [isSaving, setIsSaving] = useState(false);
 
@@ -24,7 +24,7 @@ function AdminOrderModal({ isOpen, onClose, order, statuses }) {
             if (res.ok) {
                 const data = await res.json();
                 alert(data.message);
-                onClose(order.orderId, data.status); // Передаем обновленный статус родителю
+                onClose(order.orderId, data.status); 
             } else {
                 const err = await res.json();
                 alert(err.message || "Ошибка обновления статуса.");
@@ -41,7 +41,7 @@ function AdminOrderModal({ isOpen, onClose, order, statuses }) {
         return new Date(dateStr).toLocaleString("ru-RU");
     };
 
-    // Я прибиваю модалку к body. Никаких съехавших блоков.
+    
     return ReactDOM.createPortal(
         <div className="admin-modal-overlay" onClick={() => onClose()}>
             <div className="admin-modal-box" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>

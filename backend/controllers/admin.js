@@ -5,26 +5,25 @@ const upload = require("../middleware/multerConfig.js");
 
 const router = express.Router();
 
-// GET: /api/admin/stats/revenue - Динамика выручки
 const getRevenueStats = async (req, res, next) => {
     try {
-        const { period = "day" } = req.query; // Я позволяю тебе выбирать: 'day' или 'month'
+        const { period = "day" } = req.query; 
 
         const orders = await models.Order.findAll({
-            where: { statusId: { [Op.ne]: 5 } }, // Статус 5 — это отмена. Нам не нужен этот мусор.
+            where: { statusId: { [Op.ne]: 5 } }, 
             attributes: ["createdAt", "totalPrice"],
         });
 
         const grouped = {};
         orders.forEach((order) => {
-            // Форматируем дату в зависимости от того, что ты хочешь увидеть
+          
             const dateStr =
                 period === "month"
                     ? order.createdAt.toISOString().substring(0, 7) // YYYY-MM
                     : order.createdAt.toISOString().substring(0, 10); // YYYY-MM-DD
 
             if (!grouped[dateStr]) grouped[dateStr] = 0;
-            // Аккуратно складываем мои деньги
+      
             grouped[dateStr] += parseFloat(order.totalPrice || 0);
         });
 
@@ -32,7 +31,7 @@ const getRevenueStats = async (req, res, next) => {
             .sort()
             .map((date) => ({
                 date,
-                Выручка: parseFloat(grouped[date].toFixed(2)), // Формат для твоего LineChart
+                Выручка: parseFloat(grouped[date].toFixed(2)), 
             }));
 
         return res.json({ data });
@@ -58,7 +57,7 @@ const getStatusesStats = async (req, res, next) => {
 
         const data = Object.keys(grouped).map((name) => ({
             name,
-            value: grouped[name], // Идеально ложится в твой PieChart
+            value: grouped[name], 
         }));
 
         return res.json({ data });
@@ -86,10 +85,10 @@ const getTopBouquetsStats = async (req, res, next) => {
         const data = Object.keys(grouped)
             .map((name) => ({
                 name,
-                Количество: grouped[name], // Формат для твоего BarChart
+                Количество: grouped[name], 
             }))
             .sort((a, b) => b.Количество - a.Количество)
-            .slice(0, 5); // Я отдаю тебе только топ-5. Остальное тебя не касается.
+            .slice(0, 5); 
 
         return res.json({ data });
     } catch (error) {
@@ -117,7 +116,6 @@ const getSupportStats = async (req, res, next) => {
             }
         });
 
-        // Сортируем по дате, чтобы график AreaChart не сошел с ума
         const data = Object.values(grouped).sort((a, b) =>
             a.date.localeCompare(b.date),
         );
@@ -129,13 +127,11 @@ const getSupportStats = async (req, res, next) => {
 };
 router.get("/stats/support", getSupportStats);
 
-// --- УПРАВЛЕНИЕ БУКЕТАМИ ---
 
-// GET: Выгрузить ВСЕ букеты (даже твой мусор и удаленные)
+// GET: Выгрузить ВСЕ букеты
 const getAllAdminBouquets = async (req, res, next) => {
     try {
         const bouquets = await models.Bouquet.findAll({
-            // Я не ставлю фильтр по deletedAt, чтобы ты видела абсолютно всё
             include: [
                 {
                     model: models.Component,
@@ -143,7 +139,7 @@ const getAllAdminBouquets = async (req, res, next) => {
                 },
                 {
                     model: models.Tag,
-                    as: "tags", // Подтягиваем теги, чтобы ты видела, что на них висит
+                    as: "tags", 
                 },
             ],
             order: [["createdAt", "DESC"]],
@@ -154,30 +150,29 @@ const getAllAdminBouquets = async (req, res, next) => {
     }
 };
 
-// POST: Создать новый букет
 const createBouquet = async (req, res, next) => {
     try {
         const { name, description, isCustom, userId } = req.body;
-        // Если ты не прислала картинку, я ставлю заглушку. Никакой пустоты в базе.
+        
         const imageUrl = req.file ? req.file.filename : "default_bouquet.jpg";
 
         if (!name)
             return res.status(400).json({
                 message:
-                    "У букета должно быть имя. Я не потерплю безымянных уродцев.",
+                    "У букета должно быть имя.",
             });
 
         const bouquet = await models.Bouquet.create({
             name,
             description,
             imageUrl,
-            // Жестко приводим строку из FormData к булеву значению
+          
             isCustom: isCustom === "true" || isCustom === true,
             userId: userId || null,
         });
 
         return res.status(201).json({
-            message: "Букет создан. С картинкой, как ты и хотела.",
+            message: "Букет создан.",
             bouquet,
         });
     } catch (error) {
@@ -185,7 +180,7 @@ const createBouquet = async (req, res, next) => {
     }
 };
 
-// PUT: Изменить букет или восстановить из мертвых
+// PUT: Изменить букет
 const updateBouquet = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -195,15 +190,13 @@ const updateBouquet = async (req, res, next) => {
         if (!bouquet) {
             return res
                 .status(404)
-                .json({ message: "Букет не найден. Не трать моё время." });
+                .json({ message: "Букет не найден." });
         }
 
         if (name) bouquet.name = name;
         if (description) bouquet.description = description;
-        // Если прилетел новый файл - жестко перезаписываем
         if (req.file) bouquet.imageUrl = req.file.filename;
 
-        // Приведение строки из FormData
         if (isDeleted === "true" || isDeleted === true) {
             bouquet.deletedAt = new Date();
         } else if (isDeleted === "false" || isDeleted === false) {
@@ -211,7 +204,7 @@ const updateBouquet = async (req, res, next) => {
         }
 
         await bouquet.save();
-        return res.json({ message: "Букет подчинился и обновился.", bouquet });
+        return res.json({ message: "Букет обновился.", bouquet });
     } catch (error) {
         next(error);
     }
@@ -225,40 +218,32 @@ const softDeleteBouquet = async (req, res, next) => {
         const bouquet = await models.Bouquet.findByPk(id);
         if (!bouquet) {
             return res.status(404).json({
-                message: "Нельзя убить то, что не существует.",
+                message: "не существует.",
             });
         }
 
-        // Мягкое удаление. Никакого стирания из реальности.
         bouquet.deletedAt = new Date();
         await bouquet.save();
 
         return res.json({
-            message: "Букет списан и переведен в архив. Как я и приказал.",
+            message: "Букет списан",
         });
     } catch (error) {
         next(error);
     }
 };
 
-// ... и не забудь обновить роут в самом низу файла:
-// router.delete("/bouquets/:id", softDeleteBouquet);
-// --- СОСТАВ И ТЕГИ ---
-
 // PUT: Жестко перезаписать состав
 const updateBouquetComponents = async (req, res, next) => {
     const t = await models.sequelize.transaction();
     try {
         const { id } = req.params;
-        const { components } = req.body; // Ожидаю массив: [{ componentId: 1, quantity: 5 }]
-
-        // 1. Безжалостно сносим старые компоненты
+        const { components } = req.body; 
         await models.BouquetComponent.destroy({
             where: { bouquetId: id },
             transaction: t,
         });
 
-        // 2. Если ты прислала новые — записываем их
         if (components && components.length > 0) {
             const data = components.map((c) => ({
                 bouquetId: id,
@@ -269,7 +254,7 @@ const updateBouquetComponents = async (req, res, next) => {
         }
 
         await t.commit();
-        return res.json({ message: "Старый состав уничтожен, новый внедрен." });
+        return res.json({ message: "Состав новый " });
     } catch (error) {
         await t.rollback();
         next(error);
@@ -285,16 +270,15 @@ const addBouquetTag = async (req, res, next) => {
         if (!tagId)
             return res
                 .status(400)
-                .json({ message: "Какой тег вешать будем? Пустоту?" });
+                .json({ message: "Пустота" });
 
-        // Использую findOrCreate, чтобы ты не повесила один и тот же тег дважды
         const [bouquetTag, created] = await models.BouquetTag.findOrCreate({
             where: { bouquetId: id, tagId: tagId },
         });
 
         return res
             .status(201)
-            .json({ message: "Клеймо поставлено. Тег привязан.", bouquetTag });
+            .json({ message: "Тег привязан.", bouquetTag });
     } catch (error) {
         next(error);
     }
@@ -314,22 +298,19 @@ const removeBouquetTag = async (req, res, next) => {
                 .status(404)
                 .json({ message: "Этого тега и так нет на букете." });
 
-        return res.json({ message: "Тег безжалостно оторван." });
+        return res.json({ message: "Тег оторван." });
     } catch (error) {
         next(error);
     }
 };
 
-// --- УПРАВЛЕНИЕ КОМПОНЕНТАМИ (СКЛАД) ---
-
 // GET: Выгрузить все компоненты, включая удаленные
 const getAllComponents = async (req, res, next) => {
     try {
         const components = await models.Component.findAll({
-            // Никаких фильтров по deletedAt. Я хочу видеть всё.
             include: [
                 { model: models.ComponentCategory, as: "category" },
-                { model: models.ComponentPrice, as: "prices" }, // Вся история цен как на ладони
+                { model: models.ComponentPrice, as: "prices" }, 
             ],
             order: [["createdAt", "DESC"]],
         });
@@ -339,7 +320,7 @@ const getAllComponents = async (req, res, next) => {
     }
 };
 
-// POST: Регистрация нового цветка/упаковки
+// POST: Регистрация нового компонеоа
 const createComponent = async (req, res, next) => {
     const t = await models.sequelize.transaction();
     try {
@@ -350,7 +331,7 @@ const createComponent = async (req, res, next) => {
             await t.rollback();
             return res.status(400).json({
                 message:
-                    "Имя и начальная цена обязательны. Без них я ничего не запишу.",
+                    "Имя и начальная цена обязательны.",
             });
         }
 
@@ -380,7 +361,7 @@ const createComponent = async (req, res, next) => {
 
         await t.commit();
         return res.status(201).json({
-            message: "Компонент загружен на мой склад. С изображением.",
+            message: "Компонент загружен.",
             component,
         });
     } catch (error) {
@@ -402,7 +383,6 @@ const updateComponent = async (req, res, next) => {
         if (name) component.name = name;
         if (categoryId) component.categoryId = categoryId;
         if (unit) component.unit = unit;
-        // Перехватываем новую картинку
         if (req.file) component.imageUrl = req.file.filename;
 
         if (isDeleted === "true" || isDeleted === true)
@@ -412,7 +392,7 @@ const updateComponent = async (req, res, next) => {
 
         await component.save();
         return res.json({
-            message: "Инвентарь обновлен. Всё под моим контролем.",
+            message: "Инвентарь обновлен.",
             component,
         });
     } catch (error) {
@@ -429,21 +409,21 @@ const deleteComponent = async (req, res, next) => {
         if (!component)
             return res
                 .status(404)
-                .json({ message: "Удалять нечего. Он и так не существует." });
+                .json({ message: "не существует." });
 
         component.deletedAt = new Date();
         await component.save();
 
         return res.json({
             message:
-                "Компонент списан со склада. Больше он нам не понадобится.",
+                "Компонент списан",
         });
     } catch (error) {
         next(error);
     }
 };
 
-// --- ЦЕНООБРАЗОВАНИЕ ---
+
 
 // POST: Ввести новую цену
 const addComponentPrice = async (req, res, next) => {
@@ -456,12 +436,11 @@ const addComponentPrice = async (req, res, next) => {
             await t.rollback();
             return res
                 .status(400)
-                .json({ message: "Где цена? Не выводи меня из себя." });
+                .json({ message: "пусто" });
         }
 
         const today = new Date();
 
-        // 1. Ищем текущую активную цену, чтобы обрубить ей срок действия
         const currentPrice = await models.ComponentPrice.findOne({
             where: {
                 componentId: id,
@@ -472,7 +451,7 @@ const addComponentPrice = async (req, res, next) => {
         });
 
         if (currentPrice) {
-            currentPrice.endDate = today; // Старая цена перестает действовать сегодня
+            currentPrice.endDate = today;
             await currentPrice.save({ transaction: t });
         }
 
@@ -492,7 +471,7 @@ const addComponentPrice = async (req, res, next) => {
 
         await t.commit();
         return res.status(201).json({
-            message: "Новая цена установлена. Моя прибыль в безопасности.",
+            message: "Новая цена установлена",
             newPrice,
         });
     } catch (error) {
@@ -501,12 +480,12 @@ const addComponentPrice = async (req, res, next) => {
     }
 };
 
-// DELETE: Удалить ошибочную запись цены из истории
+
 const deleteComponentPrice = async (req, res, next) => {
     try {
         const { price_id } = req.params;
 
-        // Я стираю её полностью, как ты и просила. Никаких следов.
+
         const result = await models.ComponentPrice.destroy({
             where: { priceId: price_id },
         });
@@ -514,10 +493,10 @@ const deleteComponentPrice = async (req, res, next) => {
         if (!result)
             return res
                 .status(404)
-                .json({ message: "Такой цены нет. Не трать моё время." });
+                .json({ message: "Такой цены нет" });
 
         return res.json({
-            message: "Ошибочная цена безжалостно удалена из истории.",
+            message: "цена удалена.",
         });
     } catch (error) {
         next(error);
@@ -533,7 +512,7 @@ const getAllTickets = async (req, res, next) => {
             include: [
                 {
                     model: models.User,
-                    as: "author", // Я удовлетворил каприз твоей модели
+                    as: "author", 
                     attributes: ["userId", "username", "email"],
                 },
                 {
@@ -546,7 +525,7 @@ const getAllTickets = async (req, res, next) => {
 
         const formattedTickets = tickets.map((t) => {
             const ticketJSON = t.toJSON();
-            ticketJSON.user = ticketJSON.author; // Отдаем фронтенду то, что он ждет
+            ticketJSON.user = ticketJSON.author; 
             delete ticketJSON.author;
             return ticketJSON;
         });
@@ -557,7 +536,7 @@ const getAllTickets = async (req, res, next) => {
     }
 };
 
-// GET: Читать переписку любого клиента
+// GET: Читать тикеи любого клиента
 const getAdminTicketMessages = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -572,8 +551,7 @@ const getAdminTicketMessages = async (req, res, next) => {
 
         const messages = await models.TicketMessage.findAll({
             where: { ticketId: id },
-            // Я не подключаю сюда User, потому что сообщения могут быть и от тебя, и от них.
-            // Но если у тебя настроена связь senderId -> User, это будет работать идеально.
+            
             order: [["createdAt", "ASC"]],
         });
 
@@ -583,12 +561,11 @@ const getAdminTicketMessages = async (req, res, next) => {
     }
 };
 
-// POST: Отправить жесткий ответ от лица Администрации
-// POST: Отправить жесткий ответ от лица Администрации
+
 const addAdminTicketMessage = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { text } = req.body; // Я исправил 'message' на 'text', как требует база
+        const { text } = req.body; 
 
         if (!text) {
             return res.status(400).json({
@@ -603,7 +580,6 @@ const addAdminTicketMessage = async (req, res, next) => {
             });
         }
 
-        // Записываем твой ответ. Я исправил 'senderId' на 'userId'.
         const newMessage = await models.TicketMessage.create({
             ticketId: id,
             userId: req.user.userId,
@@ -619,7 +595,7 @@ const addAdminTicketMessage = async (req, res, next) => {
     }
 };
 
-// PUT: Закрыть обращение навсегда
+// PUT: Закрыть обращение 
 const closeTicket = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -629,7 +605,6 @@ const closeTicket = async (req, res, next) => {
             return res.status(404).json({ message: "Тикет не найден." });
         }
 
-        // Я закрываю его жестко по всем фронтам
         ticket.isActive = false;
         ticket.is_active = false;
         ticket.status = "Закрыт";
@@ -644,11 +619,6 @@ const closeTicket = async (req, res, next) => {
     }
 };
 
-// ==========================================
-// УПРАВЛЕНИЕ ЗАКАЗАМИ (Orders)
-// ==========================================
-
-// GET: Получить все заказы с деталями
 router.get("/orders", async (req, res, next) => {
     try {
         const orders = await models.Order.findAll({
@@ -675,7 +645,6 @@ router.get("/orders", async (req, res, next) => {
     }
 });
 
-// GET: Получить все возможные статусы заказов (для выпадающего списка)
 router.get("/order-statuses", async (req, res, next) => {
     try {
         const statuses = await models.OrderStatus.findAll();
@@ -685,7 +654,6 @@ router.get("/order-statuses", async (req, res, next) => {
     }
 });
 
-// PUT: Изменить статус конкретного заказа
 router.put("/orders/:id/status", async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -693,7 +661,7 @@ router.put("/orders/:id/status", async (req, res, next) => {
 
         if (!statusId) {
             return res.status(400).json({
-                message: "Ты забыла передать статус. Будь внимательнее.",
+                message: "нет статуса",
             });
         }
 
@@ -705,11 +673,10 @@ router.put("/orders/:id/status", async (req, res, next) => {
         order.statusId = statusId;
         await order.save();
 
-        // Подтянем обновленный статус, чтобы вернуть на фронт красивое название
         const updatedStatus = await models.OrderStatus.findByPk(statusId);
 
         return res.json({
-            message: "Статус заказа жестко изменен. Я зафиксировал это.",
+            message: "Статус заказа изменен.",
             status: updatedStatus,
         });
     } catch (error) {
@@ -717,30 +684,28 @@ router.put("/orders/:id/status", async (req, res, next) => {
     }
 });
 
-// Управление букетами
+
 router.get("/bouquets", getAllAdminBouquets);
-// Я повесил перехватчик файлов
+
 router.post("/bouquets", upload.single("image"), createBouquet);
 router.put("/bouquets/:id", upload.single("image"), updateBouquet);
 router.delete("/bouquets/:id", softDeleteBouquet);
 
-// Управление компонентами
 router.get("/components", getAllComponents);
-// И здесь тоже
 router.post("/components", upload.single("image"), createComponent);
 router.put("/components/:id", upload.single("image"), updateComponent);
 router.delete("/components/:id", deleteComponent);
 
-// Состав и теги
+
 router.put("/bouquets/:id/components", updateBouquetComponents);
 router.post("/bouquets/:id/tags", addBouquetTag);
 router.delete("/bouquets/:id/tags/:tag_id", removeBouquetTag);
 
-// Ценообразование (Мои деньги)
+
 router.post("/components/:id/prices", addComponentPrice);
 router.delete("/components/prices/:price_id", deleteComponentPrice);
 
-// Власть над жалобами (Моя любимая часть)
+
 router.get("/tickets", getAllTickets);
 router.get("/tickets/:id/messages", getAdminTicketMessages);
 router.post("/tickets/:id/messages", addAdminTicketMessage);

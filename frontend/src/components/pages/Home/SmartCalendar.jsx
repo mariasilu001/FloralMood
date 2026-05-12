@@ -29,19 +29,14 @@ const SmartCalendar = ({ closestEvent, recommendedBouquets, user }) => {
     const handleAddToCart = async (e, bouquetId) => {
         e.stopPropagation(); // Стой. Никаких переходов на другую страницу.
         if (!user) {
-            alert(
-                "Сначала войди в систему, Лили. Я не позволю тебе делать покупки инкогнито.",
-            );
+            alert("Чтобы добавть необходимо войти в аккаунт");
             return navigate("/login");
         }
         try {
             await api.post("/me/cart", { bouquetId, quantity: 1 });
-            alert("Молодец. Я положил этот букет в твою корзину.");
         } catch (error) {
             console.error(error);
-            alert(
-                "Что-то пошло не так. Не дергайся, я позже разберусь с этим.",
-            );
+            alert("Что-то пошло не так.");
         }
     };
 
@@ -51,7 +46,7 @@ const SmartCalendar = ({ closestEvent, recommendedBouquets, user }) => {
                 <h2>
                     Ближайший повод: {closestEvent.name} ({formattedDate})
                 </h2>
-                <p>Я подобрал это специально для тебя. Не разочаруй меня.</p>
+                <p>Я подобрал это специально для тебя...</p>
             </div>
 
             <div className="calendar-carousel">
@@ -91,8 +86,7 @@ const SmartCalendar = ({ closestEvent, recommendedBouquets, user }) => {
                             color: "#aaa",
                         }}
                     >
-                        Я не нашел букетов для этого события. Мое упущение. Я
-                        исправлю каталог позже.
+                        Я не нашел букетов для этого события.
                     </p>
                 )}
             </div>

@@ -63,11 +63,10 @@ const MyCustomBouquets = () => {
             // Отправляем реальный запрос на мой бэкенд
             await api.post("/me/cart", { bouquetId, quantity: 1 });
             await fetchMeData(); // Заставляю приложение подтянуть новые данные
-            alert("Твое творение добавлено в корзину. Я прослежу за этим.");
             setSelectedBouquet(null);
         } catch (error) {
             console.error("Ошибка при добавлении в корзину:", error);
-            alert("Произошла ошибка сервера. Но я с этим разберусь.");
+            alert("Произошла ошибка сервера.");
         } finally {
             setIsLoading(false);
         }
@@ -76,7 +75,7 @@ const MyCustomBouquets = () => {
     const handleDeleteBouquet = async (bouquetId) => {
         if (
             window.confirm(
-                "Уничтожить этот букет? Я сотру его из базы безвозвратно.",
+                "Уничтожить этот букет?",
             )
         ) {
             setIsLoading(true);
@@ -87,7 +86,7 @@ const MyCustomBouquets = () => {
                 setSelectedBouquet(null);
             } catch (error) {
                 console.error("Ошибка при удалении букета:", error);
-                alert("Я не смог удалить это. Сервер сопротивляется.");
+                alert("Ошибка сервера");
             } finally {
                 setIsLoading(false);
             }
@@ -104,8 +103,7 @@ const MyCustomBouquets = () => {
                     className="admin-text-muted"
                     style={{ marginBottom: "24px" }}
                 >
-                    Здесь хранятся букеты, которые ты собрала своими руками. Под
-                    моим контролем.
+                    Здесь хранятся букеты, которые вы создали в кастомизаторе
                 </p>
 
                 {isLoading && (
@@ -116,14 +114,13 @@ const MyCustomBouquets = () => {
                             fontWeight: "bold",
                         }}
                     >
-                        Я выполняю запрос. Стой смирно...
+                        Загрузка
                     </div>
                 )}
 
                 {customBouquets.length === 0 ? (
                     <div className="profile-empty-state">
-                        Ты еще ничего не создала. Конструктор ждет тебя. Иди и
-                        делай.
+                        У вас еще нет кастомных букетов
                     </div>
                 ) : (
                     <div className="favorites-grid">

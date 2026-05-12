@@ -56,7 +56,7 @@ const Cart = () => {
             await fetchMeData(); // Заставляем приложение обновить цены
         } catch (error) {
             console.error(error);
-            alert("Я не смог изменить количество. Сервер капризничает.");
+            alert(" Сервер капризничает.");
         } finally {
             setIsLoading(false);
         }
@@ -70,7 +70,7 @@ const Cart = () => {
             await fetchMeData();
         } catch (error) {
             console.error(error);
-            alert("Не удалось удалить букет. Я разберусь с этим позже.");
+            alert("Не удалось удалить букет.");
         } finally {
             setIsLoading(false);
         }
@@ -86,7 +86,7 @@ const Cart = () => {
             !checkoutData.deliveryDate ||
             !checkoutData.deliverTimeSlotId
         ) {
-            alert("Заполни все поля, Лиля. Я не умею доставлять в пустоту.");
+            alert("Заполни все поля");
             return;
         }
 
@@ -99,13 +99,13 @@ const Cart = () => {
             await fetchMeData();
             setIsCheckoutOpen(false);
             
-            alert("Твой заказ оформлен. Я лично прослежу, чтобы всё было идеально.");
+
             navigate("/profile/orders");
         } catch (error) {
             console.error(error);
             alert(
                 error.response?.data?.message || 
-                "Сервер отверг твой заказ. Проверь свой бэкенд, как я тебе говорил."
+                "Ошибка сервера"
             );
         } finally {
             setIsLoading(false);
@@ -119,7 +119,7 @@ const Cart = () => {
 
                 {cartItems.length === 0 ? (
                     <div className="cart-empty-state">
-                        <p>Здесь пусто. Я жду, когда ты сделаешь свой выбор.</p>
+                        <p>Здесь пусто</p>
                         <button
                             className="btn-primary"
                             onClick={() => navigate("/")}
@@ -334,7 +334,7 @@ const Cart = () => {
                                 ))}
                         </select>
 
-                        <label>Комментарий для меня (курьера/флориста):</label>
+                        <label>Комментарий для курьера/флориста:</label>
                         <textarea
                             value={checkoutData.comment}
                             onChange={(e) =>

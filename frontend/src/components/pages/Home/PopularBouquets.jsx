@@ -20,7 +20,6 @@ const PopularBouquets = ({ bouquets, user }) => {
         }
     };
 
-    // Мой инструмент контроля путей. Я заставлю браузер искать там, где нужно.
     const getImageUrl = (url) => {
         if (!url)
             return "https://i.pinimg.com/1200x/4c/fe/8f/4cfe8f22648e02856fabf623ce00334b.jpg";

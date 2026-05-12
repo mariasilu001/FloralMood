@@ -185,7 +185,7 @@ const getOneBouquet = async (req, res, next) => {
                   reviewsCount
                 : 0;
 
-        // Считаем стоимость компонентов и формируем список
+        
         let componentsCost = 0;
         const componentsData = bouquet.components.map((comp) => {
             const currentPrice = comp.prices[0]?.price || 0;
@@ -201,7 +201,7 @@ const getOneBouquet = async (req, res, next) => {
             };
         });
 
-        // Итоговая цена: сумма компонентов + 6% флористу
+        
         const finalPrice = (componentsCost * 1.06).toFixed(2);
 
         return res.json({
@@ -226,13 +226,13 @@ const getOneBouquet = async (req, res, next) => {
 };
 router.get("/bouquets/:bouquetId", getOneBouquet);
 
-// Получить список всех доступных компонентов (без удаленных, с актуальной ценой)
+
 const getComponents = async (req, res, next) => {
     try {
         const today = new Date();
         const components = await models.Component.findAll({
             where: {
-                deletedAt: null, // Никакого мусора, я запрещаю отдавать удаленные компоненты
+                deletedAt: null, 
             },
             include: [
                 {
@@ -254,7 +254,7 @@ const getComponents = async (req, res, next) => {
             ],
         });
 
-        // Я сам собираю для тебя ровный объект, чтобы ты не мучилась на фронте
+        
         const formattedComponents = components.map((c) => ({
             componentId: c.componentId,
             name: c.name,
@@ -270,12 +270,12 @@ const getComponents = async (req, res, next) => {
     }
 };
 
-// Получить список категорий компонентов
+
 const getCategories = async (req, res, next) => {
     try {
         const categories = await models.ComponentCategory.findAll({
             where: { deletedAt: null },
-            attributes: ["categoryId", "name"], // Только то, что ты просила
+            attributes: ["categoryId", "name"], 
         });
         return res.json({ categories });
     } catch (error) {
@@ -283,7 +283,7 @@ const getCategories = async (req, res, next) => {
     }
 };
 
-// Получить список всех тегов
+
 const getTags = async (req, res, next) => {
     try {
         const tags = await models.Tag.findAll();
@@ -293,7 +293,7 @@ const getTags = async (req, res, next) => {
     }
 };
 
-// Получить глобальные праздники
+
 const getGlobalEvents = async (req, res, next) => {
     try {
         const globalEvents = await models.GlobalEvent.findAll();
@@ -303,7 +303,7 @@ const getGlobalEvents = async (req, res, next) => {
     }
 };
 
-// Получить типы событий
+
 const getEventTypes = async (req, res, next) => {
     try {
         const eventTypes = await models.EventType.findAll({
@@ -318,7 +318,7 @@ const getEventTypes = async (req, res, next) => {
     }
 };
 
-// Получить интервалы времени для доставки
+
 const getTimeSlots = async (req, res, next) => {
     try {
         const timeSlots = await models.DeliverTimeSlot.findAll();
@@ -328,11 +328,11 @@ const getTimeSlots = async (req, res, next) => {
     }
 };
 
-// Получить список активных методов оплаты
+
 const getPaymentMethods = async (req, res, next) => {
     try {
         const paymentMethods = await models.PaymentMethod.findAll({
-            where: { isActive: true }, // Выводим только те, что я разрешил (isActive)
+            where: { isActive: true }, 
         });
         return res.json({ paymentMethods });
     } catch (error) {
@@ -340,7 +340,7 @@ const getPaymentMethods = async (req, res, next) => {
     }
 };
 
-// Получить темы для обращений в Службу Заботы
+
 const getTicketSubjects = async (req, res, next) => {
     try {
         const subjects = await models.TicketSubject.findAll();
