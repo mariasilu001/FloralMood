@@ -62,6 +62,16 @@ const AdminLayout = () => {
                     >
                         Служба заботы
                     </NavLink>
+                    <NavLink
+                        to="/admin/orders"
+                        className={({ isActive }) =>
+                            isActive
+                                ? "admin-layout-nav-link admin-layout-nav-link--active"
+                                : "admin-layout-nav-link"
+                        }
+                    >
+                        Управление заказами
+                    </NavLink>
                 </nav>
             </header>
             <main className="admin-layout-content">

@@ -644,6 +644,79 @@ const closeTicket = async (req, res, next) => {
     }
 };
 
+// ==========================================
+// УПРАВЛЕНИЕ ЗАКАЗАМИ (Orders)
+// ==========================================
+
+// GET: Получить все заказы с деталями
+router.get("/orders", async (req, res, next) => {
+    try {
+        const orders = await models.Order.findAll({
+            include: [
+                {
+                    model: models.User,
+                    as: "user",
+               
+                    attributes: ["userId", "username", "email"],
+                },
+                { model: models.OrderStatus, as: "status" },
+                {
+                    model: models.OrderItem,
+                    as: "orderItems",
+                    include: [{ model: models.Bouquet, as: "bouquet" }],
+                },
+            ],
+            order: [["createdAt", "DESC"]],
+        });
+
+        return res.json({ orders });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// GET: Получить все возможные статусы заказов (для выпадающего списка)
+router.get("/order-statuses", async (req, res, next) => {
+    try {
+        const statuses = await models.OrderStatus.findAll();
+        return res.json({ statuses });
+    } catch (error) {
+        next(error);
+    }
+});
+
+// PUT: Изменить статус конкретного заказа
+router.put("/orders/:id/status", async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { statusId } = req.body;
+
+        if (!statusId) {
+            return res.status(400).json({
+                message: "Ты забыла передать статус. Будь внимательнее.",
+            });
+        }
+
+        const order = await models.Order.findByPk(id);
+        if (!order) {
+            return res.status(404).json({ message: "Заказ не найден." });
+        }
+
+        order.statusId = statusId;
+        await order.save();
+
+        // Подтянем обновленный статус, чтобы вернуть на фронт красивое название
+        const updatedStatus = await models.OrderStatus.findByPk(statusId);
+
+        return res.json({
+            message: "Статус заказа жестко изменен. Я зафиксировал это.",
+            status: updatedStatus,
+        });
+    } catch (error) {
+        next(error);
+    }
+});
+
 // Управление букетами
 router.get("/bouquets", getAllAdminBouquets);
 // Я повесил перехватчик файлов

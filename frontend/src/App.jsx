@@ -33,6 +33,7 @@ import AdminCharts from "./components/pages/Admin/AdminCharts";
 import AdminBouquets from "./components/pages/Admin/AdminBouquets";
 import AdminComponents from "./components/pages/Admin/AdminComponents";
 import AdminTickets from "./components/pages/Admin/AdminTickets";
+import AdminOrders from "./components/admin/AdminOrders";
 
 import ScrollToTop from "./components/utils/ScrollToTop";
 
@@ -320,6 +321,7 @@ const App = () => {
                     <Route path="bouquets" element={<AdminBouquets />} />
                     <Route path="components" element={<AdminComponents />} />
                     <Route path="tickets" element={<AdminTickets />} />
+                    <Route path="orders" element={<AdminOrders />} />
                 </Route>
 
                 {/*<Route path="*" element={<Navigate to="/" />} />*/}

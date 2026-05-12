@@ -1,0 +1,134 @@
+.admin-orders-root {
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    height: 100%;
+    overflow-y: auto;
+    background-color: var(--color-white, #ffffff);
+    color: var(--color-dark-brown, #594545);
+}
+
+.admin-orders-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-bottom: 2px solid var(--color-cream, #fff8ea);
+    padding-bottom: 15px;
+}
+
+.admin-orders-header {
+    font-size: 28px;
+    margin-bottom: 5px;
+}
+
+.admin-orders-subtitle {
+    font-size: 14px;
+    color: #777;
+}
+
+.admin-orders-table-wrapper {
+    background-color: var(--color-white, #ffffff);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.admin-orders-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.admin-orders-table th {
+    background-color: var(--color-cream, #fff8ea);
+    padding: 15px;
+    font-weight: 600;
+    color: var(--color-dark-brown, #594545);
+    border-bottom: 2px solid rgba(89, 69, 69, 0.1);
+}
+
+.admin-orders-table td {
+    padding: 15px;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+}
+
+.admin-orders-table tr:hover {
+    background-color: rgba(255, 248, 234, 0.3);
+}
+
+.font-monospace {
+    font-family: monospace;
+    color: #888;
+}
+
+.font-bold {
+    font-weight: bold;
+}
+
+/* Бейджи статусов */
+.badge-status {
+    padding: 5px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+}
+
+/* Я не знаю точных ID твоих статусов, но обычно 1-новый, 5-отмена, 4-доставлен */
+.status-1 { background-color: #e3f2fd; color: #28a745; } /* Новый */
+.status-2 { background-color: #fff3cd; color: #007bff; } /* В сборке */
+.status-5 { background-color: #f8d7da; color: #dc3545; } /* Отменен */
+
+.admin-btn-details {
+    background-color: transparent;
+    color: var(--color-dark-brown, #594545);
+    border: 1px solid var(--color-dark-brown, #594545);
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.admin-btn-details:hover {
+    background-color: var(--color-dark-brown, #594545);
+    color: var(--color-white, #ffffff);
+}
+
+/* Оверлей и коробка для модалки */
+.admin-modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    backdrop-filter: blur(4px);
+}
+
+.admin-modal-box {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.admin-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.admin-modal-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    color: var(--color-dark-brown, #594545);
+}
