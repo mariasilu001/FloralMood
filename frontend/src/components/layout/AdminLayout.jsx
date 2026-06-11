@@ -1,14 +1,37 @@
-import React, { useContext } from "react";
+import React, { useContext, useMemo } from "react";
 import { Navigate, Outlet, NavLink, Link } from "react-router-dom";
-import { AppContext } from "../../App";
+import { DBcontext } from "../../Database"; // НАША локальная база данных
 
 const AdminLayout = () => {
-  const { user } = useContext(AppContext);
+  // 1. Достаем список пользователей из нашей локальной базы
+  const { users } = useContext(DBcontext);
 
-  if (Number(user.role_id) !== 1n) {
+  // 2. Идентификация сессии через localStorage (как мы делали в профиле)
+  const userIdStr = localStorage.getItem("userId");
+
+  // Ищем юзера и считаем роль
+  const user = useMemo(() => {
+    if (!users || !userIdStr) return null;
+    return users.find((u) => u._id === BigInt(userIdStr));
+  }, [users, userIdStr]);
+
+  // 3. ЖЕСТКАЯ ЗАГЛУШКА
+  // Если база еще грузится, не пускаем дальше
+  if (!users) {
+    return (
+      <div style={{ padding: "50px", textAlign: "center" }}>
+        Проверка прав доступа...
+      </div>
+    );
+  }
+
+  // 4. ЗАЩИТА АДМИНКИ:
+  // Если юзера нет или его роль не 1n (админ) — выкидываем на главную
+  if (!user || user.role_id !== 1n) {
     return <Navigate to="/" replace />;
   }
 
+  // Если всё хорошо, возвращаем верстку
   return (
     <div className="admin-layout-wrapper">
       <header className="admin-layout-header">

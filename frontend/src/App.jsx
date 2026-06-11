@@ -297,7 +297,7 @@ const App = () => {
           <Route path="/" element={<MainLayout />}>
             <Route index element={<Home />} />
             <Route path="customizer" element={<Customizer />} />
-            {/*<Route path="cart" element={<Cart />} />*/}
+            <Route path="cart" element={<Cart />} />
             <Route path="bouquet/:id" element={<BouquetDetails />} />
 
             <Route
@@ -305,20 +305,17 @@ const App = () => {
               element={<ProfileLayout /> /*  <Navigate to="/login"/> */}
             >
               <Route index element={<PersonalDetails />} />
-              {/*<Route path="orders" element={<OrderHistory />} />*/}
-              {/*<Route path="tickets" element={<MyTickets />} />*/}
-              {/*<Route path="favorites" element={<MyFavorites />} />*/}
-              {/*<Route path="events" element={<MyEvents />} />*/}
-              {/*<Route
-              path="custom-bouquets"
-              element={<MyCustomBouquets />}
-            />*/}
+              <Route path="orders" element={<OrderHistory />} />
+              <Route path="tickets" element={<MyTickets />} />
+              <Route path="favorites" element={<MyFavorites />} />
+              <Route path="events" element={<MyEvents />} />
+              <Route path="custom-bouquets" element={<MyCustomBouquets />} />
             </Route>
           </Route>
 
           <Route path="/admin" element={<AdminLayout />}>
-            {/*<Route index element={<AdminCharts />} />*/}
-            {/*<Route path="bouquets" element={<AdminBouquets />} />*/}
+            <Route index element={<AdminCharts />} />
+            <Route path="bouquets" element={<AdminBouquets />} />
             {/*<Route path="components" element={<AdminComponents />} />*/}
             {/*<Route path="tickets" element={<AdminTickets />} />*/}
             {/*<Route path="orders" element={<AdminOrders />} />*/}
