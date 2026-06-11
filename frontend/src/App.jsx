@@ -37,6 +37,7 @@ import AdminTickets from "./components/pages/Admin/AdminTickets";
 import AdminOrders from "./components/admin/AdminOrders";
 
 import ScrollToTop from "./components/utils/ScrollToTop";
+import AdminDictionaries from "./components/pages/Admin/AdminDictionaries";
 
 export const AppContext = createContext();
 
@@ -316,9 +317,10 @@ const App = () => {
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminCharts />} />
             <Route path="bouquets" element={<AdminBouquets />} />
-            {/*<Route path="components" element={<AdminComponents />} />*/}
-            {/*<Route path="tickets" element={<AdminTickets />} />*/}
-            {/*<Route path="orders" element={<AdminOrders />} />*/}
+            <Route path="components" element={<AdminComponents />} />
+            <Route path="tickets" element={<AdminTickets />} />
+            <Route path="orders" element={<AdminOrders />} />
+            <Route path="dicts" element={<AdminDictionaries />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/" />} />
