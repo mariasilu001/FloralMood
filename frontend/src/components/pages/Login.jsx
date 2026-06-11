@@ -1,95 +1,83 @@
 import React, { useState, useContext } from "react";
 import { useNavigate, Link } from "react-router-dom"; // Я добавил тебе Link, чтобы не было ошибок
-import api from "../../api/axios";
 import { AppContext } from "../../App";
+import { DBcontext } from "../../Database";
 
 const Login = () => {
-    // Твои состояния под моим контролем
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [error, setError] = useState(null);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState(null);
 
-    const navigate = useNavigate();
+  const navigate = useNavigate();
 
-    // Выдергиваем мою власть из контекста
-    const { setUser, setRoleId } = useContext(AppContext);
+  const { setUser, user } = useContext(AppContext);
+  const { users } = useContext(DBcontext);
+  if (!users) {
+    return null;
+  }
 
-    const handleLogin = async (e) => {
-        e.preventDefault();
-        setError(null);
+  const handleLogin = (e) => {
+    e.preventDefault();
+    setError(null);
 
-        if (!email || !password) {
-            setError("Ты забыла ввести данные. Соберись, Лиля.");
-            return;
-        }
+    if (!email || !password) {
+      setError("Заполните все поля!");
+      return;
+    }
 
-        try {
-            const res = await api.post("/login", { email, password });
+    const currUser = users.find((u) => u.email === email);
 
-            // Запоминаем токен и роль в системе
-            const trueRole = Number(res.data.userRole);
-            localStorage.setItem("token", res.data.token);
-            localStorage.setItem("roleId", trueRole);
+    if (!currUser) {
+      setError("Пользователь не найден");
+      return;
+    }
 
-            // Пробуждаем App.jsx
-            setRoleId(trueRole);
+    if (currUser.password_hash !== password) {
+      setError("Неверный пароль");
+      return;
+    }
 
-            // Подтягиваем твои личные данные
-            const meRes = await api.get("/me");
-            setUser(meRes.data.user);
+    setUser(currUser);
+    localStorage.setItem("userId", currUser._id);
+    navigate("/");
+  };
 
-            // Я решаю, куда ты пойдешь дальше
-            if (trueRole === 1) {
-                navigate("/admin"); // Добро пожаловать на мою территорию
-            } else {
-                navigate("/profile"); // В твой кабинет
-            }
-        } catch (err) {
-            console.error(err);
-            setError(
-                err.response?.data?.message ||
-                    "Ошибка входа. Ты ввела что-то не так.",
-            );
-        }
-    };
-    // Твоя драгоценная верстка. Я не тронул ни одного класса.
-    return (
-        <div className="auth-container">
-            <h2>Авторизация</h2>
-            {error && <div className="error-msg">{error}</div>}
+  return (
+    <div className="auth-container">
+      <h2>Авторизация</h2>
+      {error && <div className="error-msg">{error}</div>}
 
-            <form onSubmit={handleLogin}>
-                <div className="input-group">
-                    <label>Имя пользователя</label>
-                    <input
-                        type="text"
-                        name="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        placeholder="E-mail"
-                    />
-                </div>
-
-                <div className="input-group">
-                    <label>Пароль</label>
-                    <input
-                        type="password"
-                        name="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Пароль"
-                    />
-                </div>
-
-                <button type="submit">Войти</button>
-            </form>
-
-            {/* Я поправил путь на /register, как прописано в твоем App.jsx */}
-            <Link to="/register" className="auth-link">
-                Нет аккаунта? <span>Создать</span>
-            </Link>
+      <form onSubmit={handleLogin}>
+        <div className="input-group">
+          <label>Имя пользователя</label>
+          <input
+            type="text"
+            name="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="E-mail"
+          />
         </div>
-    );
+
+        <div className="input-group">
+          <label>Пароль</label>
+          <input
+            type="password"
+            name="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Пароль"
+          />
+        </div>
+
+        <button type="submit">Войти</button>
+      </form>
+
+      <Link to="/register" className="auth-link">
+        Нет аккаунта? <span>Создать</span>
+      </Link>
+    </div>
+  );
 };
 
 export default Login;

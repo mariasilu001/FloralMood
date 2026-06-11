@@ -1,125 +1,129 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { AppContext } from "../../App";
+import { DBcontext } from "../../Database";
 
-const Register = ({ users, setUsers }) => {
-    const navigate = useNavigate();
-    const [formData, setFormData] = useState({
-        username: "",
-        email: "",
-        password: "",
-    });
-    const [error, setError] = useState("");
+const Register = () => {
+  const navigate = useNavigate();
 
-    const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
+  // Вытаскиваем глобальные инструменты из контекстов
+  const { setUser } = useContext(AppContext);
+  const { users, setUsers } = useContext(DBcontext);
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        setError("");
+  const [formData, setFormData] = useState({
+    username: "",
+    email: "",
+    password: "",
+  });
+  const [error, setError] = useState(null);
 
-        const { username, email, password } = formData;
+  // Жесткая заглушка: пока контекст базы данных равен null, ничего не рендерим
+  if (!users) {
+    return null;
+  }
 
-        if (!username || !email || !password) {
-            setError(
-                "Все поля должны быть заполнены. Не заставляй меня повторять.",
-            );
-            return;
-        }
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-        // Мой контроль уникальности
-        const userExists = users.some(
-            (u) => u.username === username || u.email === email,
-        );
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setError(null);
 
-        if (userExists) {
-            setError(
-                "Такой username или email уже занят. Придумай что-то другое, Лили.",
-            );
-            return;
-        }
+    const { username, email, password } = formData;
 
-        // Жесткая генерация уникального ID с учетом твоих прошлых ошибок
-        const newId =
-            users.length > 0
-                ? Math.max(...users.map((u) => u.user_id || u.id || 0)) + 1
-                : 1;
+    if (!username || !email || !password) {
+      setError("Все поля должны быть заполнены");
+      return;
+    }
 
-        // Формируем идеальный объект строго под твою БД
-        const newUser = {
-            user_id: newId,
-            username: username,
-            email: email,
-            password_hash: password, // Теперь это правильно ложится в базу
-            role_id: 2, // 2 — это обычный покупатель. Админы здесь только мы с тобой.
-            avatar: null,
-            created_at: new Date().toISOString(),
-            deleted_at: null,
-        };
-
-        // Внедряем в массив
-        setUsers([...users, newUser]);
-
-        // Записываем сессию
-        const currentUser = {
-            userId: newUser.user_id,
-            username: newUser.username,
-            roleId: newUser.role_id,
-        };
-        localStorage.setItem("currentUser", JSON.stringify(currentUser));
-
-        // Отправляем дальше и принудительно перезагружаем, чтобы все стейты обновились
-        navigate("/");
-        window.location.reload();
-    };
-
-    return (
-        <div className="auth-container">
-            <h2>Регистрация</h2>
-            {error && <div className="error-msg">{error}</div>}
-
-            <form onSubmit={handleSubmit}>
-                <div className="input-group">
-                    <label>Имя пользователя</label>
-                    <input
-                        type="text"
-                        name="username"
-                        value={formData.username}
-                        onChange={handleChange}
-                        placeholder="Введи имя"
-                    />
-                </div>
-
-                <div className="input-group">
-                    <label>Email</label>
-                    <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        placeholder="Твой email"
-                    />
-                </div>
-
-                <div className="input-group">
-                    <label>Пароль</label>
-                    <input
-                        type="password"
-                        name="password"
-                        value={formData.password}
-                        onChange={handleChange}
-                        placeholder="Придумай пароль"
-                    />
-                </div>
-
-                <button type="submit">Зарегистрироваться</button>
-            </form>
-
-            <Link to="/auth/login" className="auth-link">
-                Уже есть аккаунт? <span>Войти</span>
-            </Link>
-        </div>
+    const userExists = users.some(
+      (u) => u.username === username || u.email === email,
     );
+
+    if (userExists) {
+      setError(
+        "Такой username или email уже занят",
+      );
+      return;
+    }
+
+    // Безопасный поиск максимального ID для типа BigInt через метод reduce
+    const maxId = users.reduce((max, u) => (u._id > max ? u._id : max), 0n);
+    const newId = maxId + 1n;
+
+    // Формируем объект строго по структуре твоих моковых данных
+    const newUser = {
+      _id: newId,
+      username: username,
+      email: email,
+      password_hash: password,
+      role_id: 2n, // 2n — тип BigInt для роли обычного покупателя (customer)
+      avatar: null,
+      created_at: new Date(), // Объект даты, как в файле users.js
+      deleted_at: null,
+    };
+
+    // Обновляем массив пользователей в глобальном состоянии базы данных
+    setUsers([...users, newUser]);
+
+    // Авторизуем пользователя в глобальном AppContext
+    setUser(newUser);
+
+    // Записываем в локальное хранилище строго строковое значение userId
+    localStorage.setItem("userId", String(newUser._id));
+
+    // Уводим пользователя на главную страницу
+    navigate("/");
+  };
+
+  return (
+    <div className="auth-container">
+      <h2>Регистрация</h2>
+      {error && <div className="error-msg">{error}</div>}
+
+      <form onSubmit={handleSubmit}>
+        <div className="input-group">
+          <label>Имя пользователя</label>
+          <input
+            type="text"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            placeholder="Введи имя"
+          />
+        </div>
+
+        <div className="input-group">
+          <label>Email</label>
+          <input
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="Твой email"
+          />
+        </div>
+
+        <div className="input-group">
+          <label>Пароль</label>
+          <input
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Придумай пароль"
+          />
+        </div>
+
+        <button type="submit">Зарегистрироваться</button>
+      </form>
+
+      <Link to="/auth/login" className="auth-link">
+        Уже есть аккаунт? <span>Войти</span>
+      </Link>
+    </div>
+  );
 };
 
 export default Register;

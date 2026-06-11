@@ -1,97 +1,105 @@
-import React from "react";
+import React, { useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../../api/axios";
+import { DBcontext } from "../../../Database";
+import BouquetImage from "./BouquetImage";
 
 const MONTHS = [
-    "января",
-    "февраля",
-    "марта",
-    "апреля",
-    "мая",
-    "июня",
-    "июля",
-    "августа",
-    "сентября",
-    "октября",
-    "ноября",
-    "декабря",
+  "января",
+  "февраля",
+  "марта",
+  "апреля",
+  "мая",
+  "июня",
+  "июля",
+  "августа",
+  "сентября",
+  "октября",
+  "ноября",
+  "декабря",
 ];
 
-const SmartCalendar = ({ closestEvent, recommendedBouquets, user }) => {
-    const navigate = useNavigate();
+const SmartCalendar = ({ closestEvent, recommendedBouquets }) => {
+  const navigate = useNavigate();
 
-    // Если у нас вообще нет событий, я просто спрячу эту секцию.
-    if (!closestEvent) return null;
+  // Достаем users из нашей базы
+  const { cartItems, setCartItems, users } = useContext(DBcontext);
 
-    const [m, d] = closestEvent.eventDate.split("-");
-    const formattedDate = `${parseInt(d, 10)} ${MONTHS[parseInt(m, 10) - 1]}`;
+  // Ждем, пока пропсы и база инициализируются
+  if (!closestEvent || !users || !cartItems) return null;
 
-    const handleAddToCart = async (e, bouquetId) => {
-        e.stopPropagation(); // Стой. Никаких переходов на другую страницу.
-        if (!user) {
-            alert("Чтобы добавть необходимо войти в аккаунт");
-            return navigate("/login");
-        }
-        try {
-            await api.post("/me/cart", { bouquetId, quantity: 1 });
-        } catch (error) {
-            console.error(error);
-            alert("Что-то пошло не так.");
-        }
+  // Читаем сессию
+  const userIdStr = localStorage.getItem("userId");
+  const user = userIdStr
+    ? users.find((u) => u._id === BigInt(userIdStr))
+    : null;
+
+  const day = closestEvent.fullDate.getDate();
+  const monthIndex = closestEvent.fullDate.getMonth();
+  const formattedDate = `${day} ${MONTHS[monthIndex]}`;
+
+  const handleAddToCart = (e, bouquetId) => {
+    e.stopPropagation();
+
+    // Проверка авторизации
+    if (!user) {
+      alert("Чтобы добавить товар, необходимо войти в аккаунт");
+      return navigate("/auth/login");
+    }
+
+    const maxId = cartItems.reduce(
+      (max, item) => (item._id > max ? item._id : max),
+      0n,
+    );
+
+    const newItem = {
+      _id: maxId + 1n,
+      user_id: user._id, // Уверенно берем BigInt _id
+      bouquet_id: bouquetId,
+      quantity: 1,
+      created_at: new Date(),
     };
 
-    return (
-        <section className="smart-calendar-section">
-            <div className="calendar-header">
-                <h2>
-                    Ближайший повод: {closestEvent.name} ({formattedDate})
-                </h2>
-                <p>Я подобрал это специально для тебя...</p>
-            </div>
+    setCartItems([...cartItems, newItem]);
+    alert("Добавлено в твою корзину.");
+  };
 
-            <div className="calendar-carousel">
-                {recommendedBouquets.length > 0 ? (
-                    recommendedBouquets.map((bouquet) => (
-                        <div
-                            key={bouquet.bouquetId}
-                            className="bouquet-card"
-                            onClick={() =>
-                                navigate(`/bouquet/${bouquet.bouquetId}`)
-                            }
-                            style={{ cursor: "pointer" }}
-                        >
-                            <img
-                                src={
-                                    bouquet.imageUrl ||
-                                    "https://i.pinimg.com/1200x/4c/fe/8f/4cfe8f22648e02856fabf623ce00334b.jpg"
-                                }
-                                alt={bouquet.name}
-                            />
-                            <h3>{bouquet.name}</h3>
-                            <p className="price">{bouquet.calculatedPrice} ₽</p>
-                            <button
-                                onClick={(e) =>
-                                    handleAddToCart(e, bouquet.bouquetId)
-                                }
-                            >
-                                В корзину
-                            </button>
-                        </div>
-                    ))
-                ) : (
-                    <p
-                        style={{
-                            textAlign: "center",
-                            width: "100%",
-                            color: "#aaa",
-                        }}
-                    >
-                        Я не нашел букетов для этого события.
-                    </p>
-                )}
+  return (
+    <section className="smart-calendar-section">
+      <div className="calendar-header">
+        <h2>
+          Ближайший повод: {closestEvent.name} ({formattedDate})
+        </h2>
+        <p>Я подобрал это специально для тебя</p>
+      </div>
+
+      <div className="calendar-carousel">
+        {recommendedBouquets.length > 0 ? (
+          recommendedBouquets.map((bouquet) => (
+            <div
+              key={bouquet._id}
+              className="bouquet-card"
+              onClick={() => navigate(`/bouquet/${bouquet._id}`)}
+              style={{ cursor: "pointer" }}
+            >
+              <BouquetImage
+                imageBlob={bouquet.image_url}
+                altText={bouquet.name}
+              />
+              <h3>{bouquet.name}</h3>
+              <p className="price">{bouquet.calculatedPrice} ₽</p>
+              <button onClick={(e) => handleAddToCart(e, bouquet._id)}>
+                В корзину
+              </button>
             </div>
-        </section>
-    );
+          ))
+        ) : (
+          <p style={{ textAlign: "center", width: "100%", color: "#aaa" }}>
+            Я не нашел букетов для этого события.
+          </p>
+        )}
+      </div>
+    </section>
+  );
 };
 
 export default SmartCalendar;
