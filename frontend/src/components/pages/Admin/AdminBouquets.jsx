@@ -279,7 +279,7 @@ const AdminBouquets = () => {
     setTempSelections((prev) => {
       const upd = { ...prev };
       if (isChecked) {
-        upd[compIdStr] = 1;
+        up单d[compIdStr] = 1;
       } else {
         delete upd[compIdStr];
       }
@@ -347,7 +347,6 @@ const AdminBouquets = () => {
       <table className="admin-bouquets-table">
         <thead>
           <tr>
-            <th>ID</th>
             <th>Изображение</th>
             <th>Название</th>
             <th>Тип</th>
@@ -377,7 +376,6 @@ const AdminBouquets = () => {
                     : ""
                 }
               >
-                <td>{String(b._id)}</td>
                 <td>
                   <div
                     style={{
@@ -816,10 +814,7 @@ const AdminBouquets = () => {
           onClose={() => setIsConfirmDeleteOpen(null)}
         >
           <div className="admin-bouquets-confirm">
-            <p>
-              Это действие навсегда уничтожит букет (ID:{" "}
-              {String(isConfirmDeleteOpen)}).
-            </p>
+            <p>Это действие навсегда уничтожит букет.</p>
             <div className="admin-bouquets-modal-controls">
               <button
                 className="admin-bouquets-btn-delete"

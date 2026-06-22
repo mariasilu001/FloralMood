@@ -215,7 +215,6 @@ function AdminOrders() {
         <table className="admin-orders-table">
           <thead>
             <tr>
-              <th>№ Заказа</th>
               <th>Покупатель</th>
               <th>Дата оформления</th>
               <th>Статус</th>
@@ -227,7 +226,7 @@ function AdminOrders() {
             {processedOrders.length === 0 ? (
               <tr>
                 <td
-                  colSpan="6"
+                  colSpan="5"
                   style={{
                     textAlign: "center",
                     padding: "40px 20px",
@@ -240,7 +239,6 @@ function AdminOrders() {
             ) : (
               processedOrders.map((order) => (
                 <tr key={order.orderId}>
-                  <td className="font-monospace">#{order.orderId}</td>
                   <td className="font-bold">
                     {order.user?.username || "Удаленный юзер"}
                   </td>

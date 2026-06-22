@@ -252,7 +252,6 @@ const AdminComponents = () => {
       <table className="admin-bouquets-table">
         <thead>
           <tr>
-            <th>ID</th>
             <th>Фото</th>
             <th>Название</th>
             <th>Категория</th>
@@ -273,7 +272,6 @@ const AdminComponents = () => {
                 key={String(c._id)}
                 className={isDeleted ? "admin-bouquets-row-deleted" : ""}
               >
-                <td>{String(c._id)}</td>
                 <td>
                   <div
                     style={{
@@ -603,7 +601,6 @@ const AdminComponents = () => {
           <table className="admin-bouquets-table" style={{ marginTop: "24px" }}>
             <thead>
               <tr>
-                <th>ID</th>
                 <th>Цена</th>
                 <th>Дата установки</th>
                 <th>Удалить</th>
@@ -614,7 +611,6 @@ const AdminComponents = () => {
                 .sort((a, b) => b.start_date.getTime() - a.start_date.getTime())
                 .map((p) => (
                   <tr key={String(p._id)}>
-                    <td>{String(p._id)}</td>
                     <td
                       style={{ fontWeight: "bold", color: "var(--color-blue)" }}
                     >

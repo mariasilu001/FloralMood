@@ -26,10 +26,7 @@ const AdminOrderModal = ({ isOpen, onClose, order, statuses }) => {
   };
 
   return (
-    <AdminModal
-      title={`Управление заказом №${order.orderId}`}
-      onClose={() => onClose()}
-    >
+    <AdminModal title="Управление заказом" onClose={() => onClose()}>
       <div className="admin-bouquets-form">
         <div
           style={{ marginBottom: "20px", fontSize: "14px", lineHeight: "1.6" }}

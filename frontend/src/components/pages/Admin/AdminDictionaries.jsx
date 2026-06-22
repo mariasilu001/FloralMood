@@ -1,4 +1,4 @@
-import React, { useState, useContext, useMemo } from "react";
+import React, { useState, useContext } from "react";
 import { DBcontext } from "../../../Database"; // Наша автономная база данных
 import AdminModal from "../../admin/AdminModal";
 
@@ -225,7 +225,6 @@ const AdminDictionaries = () => {
           <table className="admin-bouquets-table">
             <thead>
               <tr>
-                <th>ID</th>
                 <th>Название</th>
                 <th>Действия</th>
               </tr>
@@ -233,7 +232,6 @@ const AdminDictionaries = () => {
             <tbody>
               {data.map((item) => (
                 <tr key={String(item._id)}>
-                  <td>{String(item._id)}</td>
                   <td style={{ fontWeight: "bold" }}>{item.name}</td>
                   <td>
                     <button
@@ -254,7 +252,6 @@ const AdminDictionaries = () => {
           <table className="admin-bouquets-table">
             <thead>
               <tr>
-                <th>ID</th>
                 <th>Праздник</th>
                 <th>Тип ивента</th>
                 <th>Дата (ММ-ДД)</th>
@@ -268,7 +265,6 @@ const AdminDictionaries = () => {
                 );
                 return (
                   <tr key={String(item._id)}>
-                    <td>{String(item._id)}</td>
                     <td style={{ fontWeight: "bold" }}>{item.name}</td>
                     <td>{type ? type.name : "—"}</td>
                     <td>{item.event_date}</td>
@@ -292,7 +288,6 @@ const AdminDictionaries = () => {
           <table className="admin-bouquets-table">
             <thead>
               <tr>
-                <th>ID связи</th>
                 <th>Тип ивента</th>
                 <th>Привязанный Тег</th>
                 <th>Действия</th>
@@ -306,7 +301,6 @@ const AdminDictionaries = () => {
                 const tag = tags.find((t) => t._id === item.tag_id);
                 return (
                   <tr key={String(item._id)}>
-                    <td>{String(item._id)}</td>
                     <td
                       style={{
                         fontWeight: "bold",
@@ -340,7 +334,6 @@ const AdminDictionaries = () => {
           <table className="admin-bouquets-table">
             <thead>
               <tr>
-                <th>ID</th>
                 <th>Метод оплаты</th>
                 <th>Статус (Активен)</th>
               </tr>
@@ -353,7 +346,6 @@ const AdminDictionaries = () => {
                     !item.is_active ? "admin-bouquets-row-deleted" : ""
                   }
                 >
-                  <td>{String(item._id)}</td>
                   <td style={{ fontWeight: "bold" }}>{item.name}</td>
                   <td>
                     <input
@@ -375,7 +367,6 @@ const AdminDictionaries = () => {
           <table className="admin-bouquets-table">
             <thead>
               <tr>
-                <th>ID</th>
                 <th>Название слота</th>
                 <th>Начало</th>
                 <th>Конец</th>
@@ -385,7 +376,6 @@ const AdminDictionaries = () => {
             <tbody>
               {deliverTimeSlots.map((item) => (
                 <tr key={String(item._id)}>
-                  <td>{String(item._id)}</td>
                   <td style={{ fontWeight: "bold" }}>{item.name}</td>
                   <td>{item.start_time}</td>
                   <td>{item.end_time}</td>
@@ -408,7 +398,6 @@ const AdminDictionaries = () => {
           <table className="admin-bouquets-table">
             <thead>
               <tr>
-                <th>ID</th>
                 <th>Категория</th>
                 <th>Списана (Удалена)</th>
               </tr>
@@ -421,7 +410,6 @@ const AdminDictionaries = () => {
                     key={String(item._id)}
                     className={isDeleted ? "admin-bouquets-row-deleted" : ""}
                   >
-                    <td>{String(item._id)}</td>
                     <td style={{ fontWeight: "bold" }}>{item.name}</td>
                     <td>
                       <input

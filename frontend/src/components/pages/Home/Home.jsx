@@ -226,7 +226,7 @@ const Home = () => {
         className="home-page"
         style={{ textAlign: "center", padding: "50px", color: "#f26076" }}
       >
-        <h2>Сборка данных... Сильвер работает.</h2>
+        <h2>ЗАГРУЗКААА</h2>
       </div>
     );
   }
